@@ -2,17 +2,19 @@
 
 ### Enviroments:
 
-Pytorch: 1.0.1_post2
+Pytorch: 0.4.0 or higher
 
-Python 3.6
+Python 2.7
 
-CUDA 9.0+
+CUDA 8.0+
 
-
-
-To run fixed-point CIFAR-10 training experiment, perform:
+To run CIFAR-10 fixed point training experiment, perform:
 	
 	python train_CIFAR10_CNN_fixed_point.py
+
+#### TODO:
+requirements.txt
+CIFAR-10 dataset in *.mat format --> download
 	
 
 	
