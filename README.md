@@ -13,7 +13,7 @@ To run CIFAR-10 fixed point training experiment, perform:
 	python train_CIFAR10_CNN_fixed_point.py
 
 #### TODO:
-requirements.txt
+requirements.txt,
 CIFAR-10 dataset in *.mat format --> download
 	
 
