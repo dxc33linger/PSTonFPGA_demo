@@ -40,14 +40,16 @@ device = torch.device("cuda")
 np.random.seed(1234)
 os.environ["CUDA_VISIBLE_DEVICES"]= '1'
 
-if os.path.exists('./log.txt'):
-    os.remove("log.txt")
-print("File Removed!")
+if os.path.exists('./result/log.txt'):
+    os.remove('./result/log.txt')
+os.mkdir('./result/log.txt')
+print("Log file Removed!")
+
 
 log_format = '%(asctime)s   %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 	format=log_format, datefmt='%m/%d %I:%M%p')
-fh = logging.FileHandler(os.path.join('./', 'log.txt'))
+fh = logging.FileHandler(os.path.join('./result', 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
@@ -192,8 +194,9 @@ if __name__ == "__main__":
     logging.info('cloud list %s\n' % (cloud_list))
 
     num_image_train = 45000 / 10 * task_division[0]
-    num_image_valid = 5000 / 10 * task_division[0]
     num_image_test = 10000 / 10 * task_division[0]
+    num_image_valid = 5000 / 10 * task_division[0]
+
     train_X = train_X[0:num_image_train]
     valid_X = valid_X[0:num_image_valid]
     test_X = test_X[0: num_image_test]
@@ -360,8 +363,8 @@ if __name__ == "__main__":
 
     # Training
     # logging.info ('loading trained weights...')
-    # cnn.load_params_mat('Best_epoch_CIFAR10_W.mat')
-    cnn.save_params_mat('CIFAR10_W_initial.mat')
+    # cnn.load_params_mat('./result/Best_epoch_CIFAR10_W.mat')
+    cnn.save_params_mat('./result/CIFAR10_W_initial.mat')
     
     logging.info("dropout %f"%(args.dropout_prob))
     logging.info("filter mult %f"%(args.filter_mult))
@@ -440,7 +443,7 @@ if __name__ == "__main__":
         if (valid_acc > best_valid_acc):
             best_valid_acc = (100-(valid_error * 100))
             best_epoch = i+1
-            cnn.save_params_mat('Best_epoch_CIFAR10_W.mat') # file Shreyas needs
+            cnn.save_params_mat('./result/Best_epoch_CIFAR10_W.mat') # file Shreyas needs
         
         logging.info("    --------------------------------------------")
         logging.info("Epoch %d, time taken %.2f mins " % (i+1,elapsed_time/60))
