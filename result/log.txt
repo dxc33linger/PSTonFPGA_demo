@@ -1,7 +1,0 @@
-2020-04-07 12:08:59,454    - - - - - Train_CIFAR10_CNN_fixed_point.py  - - - - - - - 
-2020-04-07 12:08:59,455   
-
-
-args = Namespace(LR_finish=0.006, LR_start=0.015, batch_size=40, dropout_prob=0.8, filter_mult=1, flip_lr=False, group_size=20, momentum=0.5, num_epochs=50, task_division='9,1', verbose=False)
-2020-04-07 12:08:59,755   cloud list [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
