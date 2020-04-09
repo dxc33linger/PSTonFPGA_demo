@@ -16,16 +16,16 @@ import re
 dtype = torch.int64
 device = torch.device("cuda")
 np.random.seed(1234)
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
-if os.path.exists('./result/log_importance_sampling.txt'):
-    os.remove('./result/log_importance_sampling.txt')
+if os.path.exists('./result/incremental_learning.txt'):
+    os.remove('./result/incremental_learning.txt')
 print("File Removed!")
 
 log_format = '%(asctime)s   %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=log_format, datefmt='%m/%d %I:%M%p')
-fh = logging.FileHandler(os.path.join('./result', 'log_importance_sampling.txt'))
+fh = logging.FileHandler(os.path.join('./result', 'incremental_learning.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
@@ -56,10 +56,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     dropout_prob = args.dropout_prob
-    logging.info(" - - - - - importance_sampling.py  - - - - - - - ")
     logging.info("\n\n\nargs = %s", args)
-
-    # logging.info  sys.argv[1:]
+    logging.info(" - - - - - incremental_learning.py  - - - - - - - ")
 
     LR_decay = (args.LR_finish / args.LR_start) ** (1. / (args.num_epochs - 1))
     cnn = CNN()
@@ -154,44 +152,39 @@ if __name__ == "__main__":
     # if name.startswith('FL') or name.startswith('scale') or name.startswith('LR'):
     # logging.info("%s: %s" % (name, global_vals[name]))
     # Load and preprocess CIFAR10 dataset
-    data = sio.loadmat('../CIFAR10.mat')
-    train_X = data['train_X']
-    valid_X = data['valid_X']
-    test_X = data['test_X']
-    train_y = np.argmax(data['train_y'], axis=1)
-    valid_y = np.argmax(data['valid_y'], axis=1)
-    test_y = np.argmax(data['test_y'], axis=1)
-
-    # cloud dataset
+    # data = sio.loadmat('../CIFAR10.mat')
+    # train_X = data['train_X']
+    # valid_X = data['valid_X']
+    # test_X = data['test_X']
+    # train_y = np.argmax(data['train_y'], axis=1)
+    # valid_y = np.argmax(data['valid_y'], axis=1)
+    # test_y = np.argmax(data['test_y'], axis=1)
+    # # cloud dataset
     task_list = list(range(10))
     task_division = list(map(int, args.task_division.split(",")))
     cloud_list = task_list[0: task_division[0]]
-    logging.info('cloud list %s\n' % (cloud_list))
-
-    num_image_train = 45000 / 10 * task_division[0]
-    num_image_test = 10000 / 10 * task_division[0]
-    num_image_valid = 5000 / 10 * task_division[0]
-    #
-    train_X = train_X[0:num_image_train]
-    valid_X = valid_X[0:num_image_valid]
-    test_X = test_X[0: num_image_test]
-    train_y = train_y[0:num_image_train]
-    valid_y = valid_y[0:num_image_valid]
-    test_y = test_y[0: num_image_test]
-
-    train_X = fixed(train_X, 16, FL_A_input)
-    valid_X = fixed(valid_X, 16, FL_A_input)
-    test_X = fixed(test_X, 16, FL_A_input)
-    train_y = torch.from_numpy(train_y).to(torch.int64)
-    valid_y = torch.from_numpy(valid_y).to(torch.int64)
-    test_y = torch.from_numpy(test_y).to(torch.int64)
-
-    logging.info('train_X.shape %s' % str(train_X.shape))
-    logging.info('test_X.shape %s ' % str(test_X.shape))
-    logging.info('valid_X.shape %s' % str(valid_X.shape))
-    logging.info('train_y.shape %s' % str(train_y.shape))
-    logging.info('test_y.shape %s ' % str(test_y.shape))
-    logging.info('valid_y.shape %s' % str(valid_y.shape))
+    logging.info('\ncloud list %s' % (cloud_list))
+    # num_image_train = 45000 / 10 * task_division[0]
+    # num_image_test = 10000 / 10 * task_division[0]
+    # num_image_valid = 5000 / 10 * task_division[0]
+    # #    # train_X = train_X[0:num_image_train]
+    # valid_X = valid_X[0:num_image_valid]
+    # test_X = test_X[0: num_image_test]
+    # # train_y = train_y[0:num_image_train]
+    # valid_y = valid_y[0:num_image_valid]
+    # test_y = test_y[0: num_image_test]
+    # # train_X = fixed(train_X, 16, FL_A_input)
+    # valid_X = fixed(valid_X, 16, FL_A_input)
+    # test_X = fixed(test_X, 16, FL_A_input)
+    # # train_y = torch.from_numpy(train_y).to(torch.int64)
+    # valid_y = torch.from_numpy(valid_y).to(torch.int64)
+    # test_y = torch.from_numpy(test_y).to(torch.int64)
+    # # logging.info('train_X.shape %s' % str(train_X.shape))
+    # logging.info('test_X.shape %s ' % str(test_X.shape))
+    # logging.info('valid_X.shape %s' % str(valid_X.shape))
+    # # logging.info('train_y.shape %s' % str(train_y.shape))
+    # logging.info('test_y.shape %s ' % str(test_y.shape))
+    # logging.info('valid_y.shape %s' % str(valid_y.shape))
     # Build CNN for CIFAR10
     cnn.append_layer('Conv_fixed',
                      name='conv_0',
@@ -338,9 +331,73 @@ if __name__ == "__main__":
 
     # Testing
     logging.info ('loading trained weights...')
-    cnn.load_params_mat('./result/Best_epoch_CIFAR10_W.mat')
-    # cnn.load_params_mat('./result/test_W.mat')
-    # print('test_W')
+    cnn.load_params_mat('./result/Best_epoch_CIFAR10_W_classes_{}.mat'.format(task_division[0]))  # file Shreyas needs
+    mask = sio.loadmat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
+    data = sio.loadmat('../CIFAR10.mat')
+
+    train_X = data['train_X']
+    valid_X = data['valid_X']
+    test_X = data['test_X']
+    train_y = np.argmax(data['train_y'], axis=1)
+    valid_y = np.argmax(data['valid_y'], axis=1)
+    test_y = np.argmax(data['test_y'], axis=1)
+
+    edge_list = task_list[task_division[0] : (task_division[0] + task_division[1])]
+    logging.info('\n......Edge list %s' % (edge_list))
+
+    num_image_train = 45000 / 10 * task_division[0]
+    num_image_test = 10000 / 10 * task_division[0]
+    num_image_valid = 5000 / 10 * task_division[0]
+
+    edge_image_train = 45000 / 10 * task_division[1]
+    edge_image_test = 10000 / 10 * task_division[1]
+    edge_image_valid = 5000 / 10 * task_division[1]
+
+    valid_X = valid_X[0 : (num_image_valid + edge_image_valid)]
+    test_X = test_X[0 : (num_image_test + edge_image_test)]
+    valid_y = valid_y[0 : (num_image_valid + edge_image_valid)]
+    test_y = test_y[0 : (num_image_test + edge_image_test)]
+
+    train_X = train_X[num_image_train : (num_image_train + edge_image_train)]
+    train_y = train_y[num_image_train : (num_image_train + edge_image_train)]
+
+    train_X = fixed(train_X, 16, FL_A_input)
+    valid_X = fixed(valid_X, 16, FL_A_input)
+    test_X = fixed(test_X, 16, FL_A_input)
+    train_y = torch.from_numpy(train_y).to(torch.int64)
+    valid_y = torch.from_numpy(valid_y).to(torch.int64)
+    test_y = torch.from_numpy(test_y).to(torch.int64)
+
+    logging.info('train_X.shape %s' % str(train_X.shape))
+    logging.info('test_X.shape %s ' % str(test_X.shape))
+    logging.info('valid_X.shape %s' % str(valid_X.shape))
+    logging.info('train_y.shape %s' % str(train_y.shape))
+    logging.info('test_y.shape %s ' % str(test_y.shape))
+    logging.info('valid_y.shape %s' % str(valid_y.shape))
+
+    # Training
+    # logging.info ('loading trained weights...')
+    # cnn.load_params_mat('./result/Best_epoch_CIFAR10_W.mat')
+    cnn.save_params_mat('./result/CIFAR10_W_initial.mat')
+
+    logging.info("dropout %f" % (args.dropout_prob))
+    logging.info("filter mult %f" % (args.filter_mult))
+    logging.info("batch size %f" % (args.batch_size))
+    logging.info("group size %f" % (args.group_size))
+    logging.info("LR start %f" % (args.LR_start))
+    logging.info("LR finish %f" % (args.LR_finish))
+
+    logging.info("----------------------------")
+    currentDT = datetime.datetime.now()
+    logging.info(str(currentDT))
+    logging.info("Training...")
+    batch_size = args.batch_size
+    group_size = args.group_size
+    num_batches = int(edge_image_train / batch_size)
+    num_groups = int(batch_size / group_size)
+    Learning_Rate = args.LR_start
+    best_valid_acc = 0.0
+
     batch_size_valid = 40
     num_batches_valid = int(num_image_valid / batch_size_valid)
     valid_error = 0.
@@ -356,55 +413,94 @@ if __name__ == "__main__":
     valid_error /= num_image_valid
     valid_loss /= num_batches_valid
     valid_acc = (100 - (valid_error * 100))
-    logging.info("    valid accuracy: %.2f%%" % valid_acc)
+    logging.info(" On cloud + edge {} + {},  valid accuracy: %.2f%%".format(cloud_list, edge_list,  valid_acc))
     logging.info("    valid loss: %.4f" % valid_loss)
 
-    threshold = task_division[0] / 10.0
-    print('\n Generating mask for top %.3f  params' % threshold)
-    W = sio.loadmat('./result/Best_epoch_CIFAR10_W_classes_{}.mat'.format(task_division[0]))  # file Shreyas needs
 
-    # W_loadback = sio.savemat('./result/test_W.mat', W)
-    mask = dict()
-    # print(type(W['conv_2_W'][0,0,0,0])) ## should be int16
-    for key, value in W.items():
-        if re.search('conv_', key):
-            # print(key, value.shape)
-            # print(value[0:5, :, :, :])
-            num_channel = value.shape[0]
-            metrics = np.sum(abs(value), axis = (1,2,3))
-            # print(metrics)
-            num_freeze = int(round(num_channel * threshold))
-            arg_max = np.argsort(metrics) # Returns the indices sort an array. small->big
-            # print(arg_max)
-            arg_max_rev = arg_max[::-1][:num_freeze]  # big - > small
-            thre = metrics[arg_max_rev[-1]]  # min metrics
-            mask[key] = np.ones(value.shape)
-            mask[key][arg_max_rev.tolist(), :, :, :] = 0.0  ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
-            print('mask generated for layer %s, shape: %s ' % (key, mask[key].shape))
-            # print(mask[0:5, :, :, :])
-            # break
-        elif re.search('fc_', key):
-            # print(key, value.shape)
-            # print(value[0:5,:])
-            num_channel = value.shape[0]
-            metrics = np.sum(abs(value), axis = (1))
-            # print(metrics)
-            num_freeze = int(round(num_channel * threshold))
-            arg_max = np.argsort(metrics) # Returns the indices sort an array. small->big
-            # print(arg_max)
-            arg_max_rev = arg_max[::-1][:num_freeze]  # big - > small
-            thre = metrics[arg_max_rev[-1]]  # min metrics
 
-            mask[key] = np.ones(value.shape)
-            mask[key][arg_max_rev.tolist(), :] = 0.0  ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
-            print('mask generated for layer %s, shape: %s ' % (key, mask[key].shape))
-            # print(mask[key][0:5, :])
-            # break
+    for i in range(args.num_epochs):
 
-    sio.savemat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division), mask)
-    print('\nmask saved in ./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
-    #
-    # mask_test = sio.loadmat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
-    # for key, value in mask_test.items():
-    #     if re.search('W', key):
-    #         print(key, np.sum(value, axis = (0,1,2,3)))
+        start_time = time.time()
+        IX = np.random.permutation(np.arange(edge_image_train))
+        train_X_shuffled = train_X[IX, :]
+        train_y_shuffled = train_y[IX]
+        wrong_predictions = 0
+        train_loss = 0
+        logging.info('Epoch {} train_loss {:.4f}'.format(i, train_loss))
+
+        for j in range(num_batches):
+            # logging.info("Epoch %d (%d/%d)" % (i+1, j+1, num_batches))
+            train_X_mb = train_X_shuffled[j * batch_size:(j + 1) * batch_size]  # mini-batch
+            train_y_mb = train_y_shuffled[j * batch_size:(j + 1) * batch_size]
+            for k in range(num_groups):  # number_gropu = batch_size
+                train_X_mg = fixed(train_X_mb[k * group_size:(k + 1) * group_size],
+                                   16, FL_A_input)  # convert dataset to fixed-point, 16+FL_A_input
+                train_y_mg = train_y_mb[k * group_size:(k + 1) * group_size]
+                predictions, loss = cnn.feed_forward(train_X_mg, train_y_mg, train_or_test=1)
+                # logging.info('Epoch {} Batch {} Loss {:.4f}'.format(i, j, loss))
+                cnn.feed_backward()
+                cnn.weight_gradient()
+                # import pdb; pdb.set_trace()
+                if k == num_groups - 1:
+                    cnn.apply_weight_gradients(Learning_Rate, args.momentum,
+                                               batch_size, True)
+                else:
+                    cnn.apply_weight_gradients(Learning_Rate, args.momentum,
+                                               batch_size, False)
+                # import pdb; pdb.set_trace()
+                wrong_predictions += torch.sum(predictions.cpu() != train_y_mg).numpy()
+                train_loss += loss
+            # logging.info("Loss: %.4f" % cnn.loss)
+
+        elapsed_time = time.time() - start_time
+        train_error = wrong_predictions / edge_image_train
+        train_loss /= (num_batches * num_groups)
+        logging.info("Epoch %d takes %.2f mins" % (i + 1, elapsed_time / 60))
+        logging.info("Train accuracy: %.2f%%" % (100 - (train_error * 100)))
+
+        batch_size_valid = 40
+        num_batches_valid = int(edge_image_valid / batch_size_valid)
+        valid_error = 0.
+        valid_loss = 0.
+
+        for j in range(num_batches_valid):  # testing
+            predictions, valid_loss_batch = cnn.feed_forward(
+                fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
+                      16, FL_A_input), valid_y[j * batch_size_valid:(j + 1) * batch_size_valid], train_or_test=0)
+            valid_error += torch.sum(
+                predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
+            valid_loss += valid_loss_batch
+        valid_error /= edge_image_valid
+        valid_loss /= num_batches_valid
+
+        train_acc = (100 - (train_error * 100))
+        valid_acc = (100 - (valid_error * 100))
+
+        if (valid_acc > best_valid_acc):
+            best_valid_acc = (100 - (valid_error * 100))
+            best_epoch = i + 1
+            cnn.save_params_mat('./result/Best_epoch_CIFAR10_W.mat')  # file Shreyas needs
+
+        logging.info("    --------------------------------------------")
+        logging.info("Epoch %d, time taken %.2f mins " % (i + 1, elapsed_time / 60))
+        logging.info("    Learning_Rate: %.3e" % Learning_Rate)
+        logging.info("    train accuracy: %.2f%%" % train_acc)
+        logging.info("    train loss: %.4f" % train_loss)
+        logging.info("    valid accuracy: %.2f%%" % valid_acc)
+        logging.info("    valid loss: %.4f" % valid_loss)
+        logging.info("    \t best valid accuracy: %.2f%%" % best_valid_acc)
+        logging.info("    Genralization error: %.2f%%" % abs(train_acc - valid_acc))
+        logging.info("    best epoch: %d" % best_epoch)
+        if (i == 10):
+            Learning_Rate -= 0.001
+        if (i == 30):
+            Learning_Rate -= 0.0005
+        if (i == 60):
+            Learning_Rate -= 0.0005
+        if (i == 90):
+            Learning_Rate -= 0.0005
+        if (i == 120):
+            Learning_Rate -= 0.0005
+        # cnn.save_params_mat('CIFAR10_W.mat')
+
+

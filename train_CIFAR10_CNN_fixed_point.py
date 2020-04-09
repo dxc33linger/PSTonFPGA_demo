@@ -42,7 +42,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]= '1'
 
 if os.path.exists('./result/log.txt'):
     os.remove('./result/log.txt')
-os.mkdir('./result/log.txt')
+# os.mkdir('./result/log.txt')
 print("Log file Removed!")
 
 
@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     dropout_prob = args.dropout_prob
-    logging.info(" - - - - - Train_CIFAR10_CNN_fixed_point.py  - - - - - - - ")
     logging.info("\n\n\nargs = %s", args)
+    logging.info(" - - - - - Train_CIFAR10_CNN_fixed_point.py  - - - - - - - ")
 
     # logging.info  sys.argv[1:]
     
@@ -443,7 +443,7 @@ if __name__ == "__main__":
         if (valid_acc > best_valid_acc):
             best_valid_acc = (100-(valid_error * 100))
             best_epoch = i+1
-            cnn.save_params_mat('./result/Best_epoch_CIFAR10_W.mat') # file Shreyas needs
+            cnn.save_params_mat('./result/Best_epoch_CIFAR10_W_classes_{}.mat'.format(task_division[0])) # file Shreyas needs
         
         logging.info("    --------------------------------------------")
         logging.info("Epoch %d, time taken %.2f mins " % (i+1,elapsed_time/60))
