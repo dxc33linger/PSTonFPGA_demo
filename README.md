@@ -23,7 +23,7 @@ To load a pre-trained model and do importance sampling, perform:
 	
 All the generated files are saved in ./result
 
-You will also need a cifar10 dataset file in .mat. Since the file is too large to upload to Github, please email the authours ({skvenka5, xiaocong}@asu.edu) to request the dataset.
+You will also need a cifar10 dataset file in .mat. Since the file is too large to upload to Github, please contact the contributors to request the dataset.
 
 	
 	
