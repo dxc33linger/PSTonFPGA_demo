@@ -18,16 +18,55 @@ device = torch.device("cuda")
 np.random.seed(1234)
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
-if os.path.exists('./result/incremental_learning.txt'):
-    os.remove('./result/incremental_learning.txt')
+if os.path.exists('./result/log_incremental_learning.txt'):
+    os.remove('./result/log_incremental_learning.txt')
 print("File Removed!")
 
 log_format = '%(asctime)s   %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=log_format, datefmt='%m/%d %I:%M%p')
-fh = logging.FileHandler(os.path.join('./result', 'incremental_learning.txt'))
+fh = logging.FileHandler(os.path.join('./result', 'log_incremental_learning.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
+
+
+
+def process_dataset(train_X, test_X, valid_X, train_y, test_y, valid_y):
+
+    train_X = fixed(train_X, 16, FL_A_input)
+    valid_X = fixed(valid_X, 16, FL_A_input)
+    test_X = fixed(test_X, 16, FL_A_input)
+    train_y = torch.from_numpy(train_y).to(torch.int64)
+    valid_y = torch.from_numpy(valid_y).to(torch.int64)
+    test_y = torch.from_numpy(test_y).to(torch.int64)
+
+    logging.info('train_X.shape %s' % str(train_X.shape))
+    logging.info('test_X.shape %s ' % str(test_X.shape))
+    logging.info('valid_X.shape %s' % str(valid_X.shape))
+    logging.info('train_y.shape %s' % str(train_y.shape))
+    logging.info('test_y.shape %s ' % str(test_y.shape))
+    logging.info('valid_y.shape %s\n' % str(valid_y.shape))
+
+    return train_X, test_X, valid_X, train_y, test_y, valid_y
+
+def valid(cloud_image_valid, valid_X, valid_y):
+    batch_size_valid = 40
+    num_batches_valid = int(cloud_image_valid / batch_size_valid)
+    valid_error = 0.
+    valid_loss = 0.
+
+    for j in range(num_batches_valid):  # testing
+        predictions, valid_loss_batch = cnn.feed_forward(fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
+                                                               16, FL_A_input),
+                                                         valid_y[j * batch_size_valid:(j + 1) * batch_size_valid],
+                                                         train_or_test=0)
+        valid_error += torch.sum(predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
+        valid_loss += valid_loss_batch
+    valid_error /= cloud_image_valid
+    valid_loss /= num_batches_valid
+    valid_acc = (100 - (valid_error * 100))
+    return valid_acc
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train CNN for MNIST",
@@ -148,43 +187,13 @@ if __name__ == "__main__":
     scale_fc = 1.05 * 2. ** (FL_L_WG_fc - 15) * args.LR_start / args.batch_size
     scale = 2
     global_vals = dict(globals().items())
-    # for name in sorted(global_vals.iterkeys()):
-    # if name.startswith('FL') or name.startswith('scale') or name.startswith('LR'):
-    # logging.info("%s: %s" % (name, global_vals[name]))
-    # Load and preprocess CIFAR10 dataset
-    # data = sio.loadmat('../CIFAR10.mat')
-    # train_X = data['train_X']
-    # valid_X = data['valid_X']
-    # test_X = data['test_X']
-    # train_y = np.argmax(data['train_y'], axis=1)
-    # valid_y = np.argmax(data['valid_y'], axis=1)
-    # test_y = np.argmax(data['test_y'], axis=1)
+
     # # cloud dataset
     task_list = list(range(10))
     task_division = list(map(int, args.task_division.split(",")))
     cloud_list = task_list[0: task_division[0]]
     logging.info('\ncloud list %s' % (cloud_list))
-    # num_image_train = 45000 / 10 * task_division[0]
-    # num_image_test = 10000 / 10 * task_division[0]
-    # num_image_valid = 5000 / 10 * task_division[0]
-    # #    # train_X = train_X[0:num_image_train]
-    # valid_X = valid_X[0:num_image_valid]
-    # test_X = test_X[0: num_image_test]
-    # # train_y = train_y[0:num_image_train]
-    # valid_y = valid_y[0:num_image_valid]
-    # test_y = test_y[0: num_image_test]
-    # # train_X = fixed(train_X, 16, FL_A_input)
-    # valid_X = fixed(valid_X, 16, FL_A_input)
-    # test_X = fixed(test_X, 16, FL_A_input)
-    # # train_y = torch.from_numpy(train_y).to(torch.int64)
-    # valid_y = torch.from_numpy(valid_y).to(torch.int64)
-    # test_y = torch.from_numpy(test_y).to(torch.int64)
-    # # logging.info('train_X.shape %s' % str(train_X.shape))
-    # logging.info('test_X.shape %s ' % str(test_X.shape))
-    # logging.info('valid_X.shape %s' % str(valid_X.shape))
-    # # logging.info('train_y.shape %s' % str(train_y.shape))
-    # logging.info('test_y.shape %s ' % str(test_y.shape))
-    # logging.info('valid_y.shape %s' % str(valid_y.shape))
+
     # Build CNN for CIFAR10
     cnn.append_layer('Conv_fixed',
                      name='conv_0',
@@ -331,10 +340,15 @@ if __name__ == "__main__":
 
     # Testing
     logging.info ('loading trained weights...')
-    cnn.load_params_mat('./result/Best_epoch_CIFAR10_W_classes_{}.mat'.format(task_division[0]))  # file Shreyas needs
-    mask = sio.loadmat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
-    data = sio.loadmat('../CIFAR10.mat')
+    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))  # file Shreyas needs
+    mask = sio.loadmat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0], args.task_division))
+    for key, value in mask.items():
+        if re.search('conv', key):
+            print(key, np.sum(value, axis = (0,1,2,3)))
+        if re.search('fc', key):
+            print(key, np.sum(value, axis = (0,1)))
 
+    data = sio.loadmat('../order_cifar10.mat')
     train_X = data['train_X']
     valid_X = data['valid_X']
     test_X = data['test_X']
@@ -342,44 +356,53 @@ if __name__ == "__main__":
     valid_y = np.argmax(data['valid_y'], axis=1)
     test_y = np.argmax(data['test_y'], axis=1)
 
+
     edge_list = task_list[task_division[0] : (task_division[0] + task_division[1])]
     logging.info('\n......Edge list %s' % (edge_list))
 
-    num_image_train = 45000 / 10 * task_division[0]
-    num_image_test = 10000 / 10 * task_division[0]
-    num_image_valid = 5000 / 10 * task_division[0]
+    cloud_image_train = 45000 / 10 * task_division[0]
+    cloud_image_test = 10000 / 10 * task_division[0]
+    cloud_image_valid = 5000 / 10 * task_division[0]
 
     edge_image_train = 45000 / 10 * task_division[1]
     edge_image_test = 10000 / 10 * task_division[1]
     edge_image_valid = 5000 / 10 * task_division[1]
 
-    valid_X = valid_X[0 : (num_image_valid + edge_image_valid)]
-    test_X = test_X[0 : (num_image_test + edge_image_test)]
-    valid_y = valid_y[0 : (num_image_valid + edge_image_valid)]
-    test_y = test_y[0 : (num_image_test + edge_image_test)]
+    # cloud data
+    train_cloud_x = train_X[0:cloud_image_train]
+    valid_cloud_x = valid_X[0:cloud_image_valid]
+    test_cloud_x = test_X[0: cloud_image_test]
+    train_cloud_y = train_y[0:cloud_image_train]
+    valid_cloud_y = valid_y[0:cloud_image_valid]
+    test_cloud_y = test_y[0: cloud_image_test]
 
-    train_X = train_X[num_image_train : (num_image_train + edge_image_train)]
-    train_y = train_y[num_image_train : (num_image_train + edge_image_train)]
+    # edge data
+    train_edge_x = train_X[cloud_image_train : (cloud_image_train + edge_image_train)]
+    valid_edge_x = valid_X[cloud_image_valid : (cloud_image_valid + edge_image_valid)]
+    test_edge_x = test_X[cloud_image_test : (cloud_image_train + edge_image_train)]
+    train_edge_y = train_y[cloud_image_train : (cloud_image_train + edge_image_train)]
+    valid_edge_y = valid_y[cloud_image_valid: (cloud_image_train + edge_image_train)]
+    test_edge_y = test_y[cloud_image_test : (cloud_image_train + edge_image_train)]
 
-    train_X = fixed(train_X, 16, FL_A_input)
-    valid_X = fixed(valid_X, 16, FL_A_input)
-    test_X = fixed(test_X, 16, FL_A_input)
-    train_y = torch.from_numpy(train_y).to(torch.int64)
-    valid_y = torch.from_numpy(valid_y).to(torch.int64)
-    test_y = torch.from_numpy(test_y).to(torch.int64)
+    # full data
+    train_full_x = train_X[0:45000]
+    valid_full_x = valid_X[0:5000]
+    test_full_x = test_X[0: 10000]
+    train_full_y = train_y[0:45000]
+    valid_full_y = valid_y[0:5000]
+    test_full_y = test_y[0: 10000]
 
-    logging.info('train_X.shape %s' % str(train_X.shape))
-    logging.info('test_X.shape %s ' % str(test_X.shape))
-    logging.info('valid_X.shape %s' % str(valid_X.shape))
-    logging.info('train_y.shape %s' % str(train_y.shape))
-    logging.info('test_y.shape %s ' % str(test_y.shape))
-    logging.info('valid_y.shape %s' % str(valid_y.shape))
+
+    train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y = process_dataset(train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y )
+    train_edge_x, test_edge_x, valid_edge_x, train_edge_y, test_edge_y, valid_edge_y = process_dataset(train_edge_x, test_edge_x, valid_edge_x, train_edge_y, test_edge_y, valid_edge_y )
+    train_full_x, test_full_x, valid_full_x, train_full_y, test_full_y, valid_full_y = process_dataset(train_full_x, test_full_x, valid_full_x, train_full_y, test_full_y, valid_full_y )
+
+    cloud_image_train = edge_image_train
+    cloud_image_test = edge_image_test
+    cloud_image_valid = edge_image_valid
+    train_X, test_X, valid_X, train_y, test_y, valid_y =  train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y
 
     # Training
-    # logging.info ('loading trained weights...')
-    # cnn.load_params_mat('./result/Best_epoch_CIFAR10_W.mat')
-    cnn.save_params_mat('./result/CIFAR10_W_initial.mat')
-
     logging.info("dropout %f" % (args.dropout_prob))
     logging.info("filter mult %f" % (args.filter_mult))
     logging.info("batch size %f" % (args.batch_size))
@@ -390,7 +413,6 @@ if __name__ == "__main__":
     logging.info("----------------------------")
     currentDT = datetime.datetime.now()
     logging.info(str(currentDT))
-    logging.info("Training...")
     batch_size = args.batch_size
     group_size = args.group_size
     num_batches = int(edge_image_train / batch_size)
@@ -398,25 +420,11 @@ if __name__ == "__main__":
     Learning_Rate = args.LR_start
     best_valid_acc = 0.0
 
-    batch_size_valid = 40
-    num_batches_valid = int(num_image_valid / batch_size_valid)
-    valid_error = 0.
-    valid_loss = 0.
-
-    for j in range(num_batches_valid):  # testing
-        predictions, valid_loss_batch = cnn.feed_forward(fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
-                                                               16, FL_A_input),
-                                                         valid_y[j * batch_size_valid:(j + 1) * batch_size_valid],
-                                                         train_or_test=0)
-        valid_error += torch.sum(predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
-        valid_loss += valid_loss_batch
-    valid_error /= num_image_valid
-    valid_loss /= num_batches_valid
-    valid_acc = (100 - (valid_error * 100))
-    logging.info(" On cloud + edge {} + {},  valid accuracy: %.2f%%".format(cloud_list, edge_list,  valid_acc))
-    logging.info("    valid loss: %.4f" % valid_loss)
-
-
+    logging.info("\nTest after loading pre-trained model........")
+    logging.info("On cloud dataset {},  valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
+    logging.info("On edge dataset  {}                              valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
+    # logging.info(" On full dataset  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  valid accuracy: {:.2f}%".format( valid(5000, valid_full_x, valid_full_y)))
+    #
 
     for i in range(args.num_epochs):
 
@@ -441,12 +449,13 @@ if __name__ == "__main__":
                 cnn.feed_backward()
                 cnn.weight_gradient()
                 # import pdb; pdb.set_trace()
+                logging.info('mask: ', mask)
                 if k == num_groups - 1:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
-                                               batch_size, True)
+                                               batch_size, True, mask)
                 else:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
-                                               batch_size, False)
+                                               batch_size, False, mask)
                 # import pdb; pdb.set_trace()
                 wrong_predictions += torch.sum(predictions.cpu() != train_y_mg).numpy()
                 train_loss += loss

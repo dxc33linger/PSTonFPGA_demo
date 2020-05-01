@@ -147,7 +147,7 @@ class Conv_fixed(object):
         # print("%s feed backward: %.3f sec" % (self.name, time_elased))
         return self.input_gradients
 
-    def weight_gradient(self, groups=0):   # add mask within this function to enable segmented training
+    def weight_gradient(self, groups=0):
         # t_start = time.time()
         if groups > 0:
             group_size = int(self.num_images / groups)
@@ -169,6 +169,7 @@ class Conv_fixed(object):
 
     def apply_weight_gradients(self, learning_rate, momentum, 
                             batch_size, last_group):# add mask within this function to enable segmented training
+        # ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
         learning_rate_scaled = fixed(learning_rate / self.scale / batch_size, 
                                      16, self.FL_L_WG)
         
@@ -194,10 +195,52 @@ class Conv_fixed(object):
             if (wtgrad_sparsity > 95.0):
                 print('Warning..!%s has almost zero wt  gradients'%(self.name))
 
-            self.W -= scaled_WM  # weight update function
+            self.W -= scaled_WM
+            # print('NO mask applied')
             momentum_fp = fixed(momentum, 16, self.FL_M_WU)
             self.W_momentum = (self.W_momentum * momentum_fp).round(16, 
                               self.FL_WM)
+
+
+    def apply_weight_gradients_mask(self, learning_rate, momentum,
+                               batch_size, last_group,
+                               layer_mask):  # add mask within this function to enable segmented training
+        # ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
+        learning_rate_scaled = fixed(learning_rate / self.scale / batch_size,
+                                     16, self.FL_L_WG)
+
+        if self.num_images == batch_size:
+            num_groups = len(self.weight_gradients)
+            for i in range(num_groups):
+                scaled_WG = (self.weight_gradients[i] * learning_rate_scaled).round(16, self.FL_WM)  # scaled weight gradient
+                self.W_momentum += scaled_WG
+            last_group = True
+        else:
+            scaled_WG = (self.weight_gradients * learning_rate_scaled).round(16,
+                                                                             self.FL_WM)
+            self.W_momentum += scaled_WG  # momentum updating
+        if last_group:
+            scale_fp = fixed(self.scale, 16, self.FL_L_WU)
+            scaled_WM = (scale_fp * self.W_momentum).round(16, self.FL_W)  # momentum
+
+            nonzero_grad = np.count_nonzero(scaled_WM.value.cpu().numpy())
+            total_params = np.size(scaled_WM.value.cpu().numpy())
+            zero_grad = total_params - nonzero_grad
+            wtgrad_sparsity = zero_grad * 100.0 / total_params
+            if (wtgrad_sparsity > 95.0):
+                print('Warning..!%s has almost zero wt  gradients' % (self.name))
+
+            print(layer_mask[-5:-1, 0, :, :])
+            self.W -= np.multiply(scaled_WM, layer_mask)
+            print(mask.shape, self.W.shape)
+            print(self.W[-5:-1, 0, :, :])
+            print('\nMask applied\n')  # weight update function
+
+
+            momentum_fp = fixed(momentum, 16, self.FL_M_WU)
+            self.W_momentum = (self.W_momentum * momentum_fp).round(16, self.FL_WM)
+
+
 
 class FC_fixed(object):
     def __init__(self, name, input_dim, num_units, FL_W, FL_WG,
@@ -293,7 +336,7 @@ class FC_fixed(object):
                          self.local_gradients, self.FL_WG)
 
     def apply_weight_gradients(self, learning_rate, momentum,
-                            batch_size, last_group):
+                            batch_size, last_group, layer_mask = None):
         learning_rate_scaled = fixed(learning_rate / self.scale / batch_size,
                                      16, self.FL_L_WG)
         if batch_size == self.num_images:
@@ -318,12 +361,50 @@ class FC_fixed(object):
             
             if (wtgrad_sparsity > 95.0):
                 print('WARNING..!%s has almost zero wt  gradients'%(self.name))
-            
+
             self.W -= scaled_WM
+            # print('NO mask applied')
             momentum_fp = fixed(momentum, 16, self.FL_M_WU)
             self.W_momentum = (self.W_momentum * momentum_fp).round(16,
                               self.FL_WM)
 
+
+    def apply_weight_gradients_mask(self, learning_rate, momentum,
+                               batch_size, last_group, layer_mask):
+        learning_rate_scaled = fixed(learning_rate / self.scale / batch_size,
+                                     16, self.FL_L_WG)
+        if batch_size == self.num_images:
+            num_groups = len(self.weight_gradients)
+            scaled_WG = [(self.weight_gradients[i] * learning_rate_scaled).round(16,
+                                                                                 self.FL_WM) for i in range(num_groups)]
+            for i in range(num_groups):
+                self.W_momentum += scaled_WG[i]
+            last_group = True
+        else:
+            scaled_WG = (self.weight_gradients * learning_rate_scaled).round(16,
+                                                                             self.FL_WM)
+            self.W_momentum += scaled_WG
+        if last_group:
+            scale_fp = fixed(self.scale, 16, self.FL_L_WU)
+            scaled_WM = (scale_fp * self.W_momentum).round(16, self.FL_W)
+
+            nonzero_grad = np.count_nonzero(scaled_WM.value.cpu().numpy())
+            total_params = np.size(scaled_WM.value.cpu().numpy())
+            zero_grad = total_params - nonzero_grad
+            wtgrad_sparsity = zero_grad * 100.0 / total_params
+
+            if (wtgrad_sparsity > 95.0):
+                print('WARNING..!%s has almost zero wt  gradients' % (self.name))
+
+
+            self.W -= np.multiply(scaled_WM, layer_mask)
+            print(mask.shape, self.W.shape)
+            print(self.W[-5:-1, 0, :, :])
+            print('Mask applied')  # weight update function
+
+            momentum_fp = fixed(momentum, 16, self.FL_M_WU)
+            self.W_momentum = (self.W_momentum * momentum_fp).round(16,
+                                                                    self.FL_WM)
 class Flatten(object):
     def __init__(self, name, input_map_size, num_channels):
         self.input_map_size = input_map_size

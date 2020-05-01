@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # if name.startswith('FL') or name.startswith('scale') or name.startswith('LR'):
     # logging.info("%s: %s" % (name, global_vals[name]))
     # Load and preprocess CIFAR10 dataset
-    data = sio.loadmat('../CIFAR10.mat')
+    data = sio.loadmat('../order_cifar10.mat')
     train_X = data['train_X']
     valid_X = data['valid_X']
     test_X = data['test_X']
@@ -338,7 +338,7 @@ if __name__ == "__main__":
 
     # Testing
     logging.info ('loading trained weights...')
-    cnn.load_params_mat('./result/Best_epoch_CIFAR10_W.mat')
+    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))
     # cnn.load_params_mat('./result/test_W.mat')
     # print('test_W')
     batch_size_valid = 40
@@ -361,7 +361,7 @@ if __name__ == "__main__":
 
     threshold = task_division[0] / 10.0
     print('\n Generating mask for top %.3f  params' % threshold)
-    W = sio.loadmat('./result/Best_epoch_CIFAR10_W_classes_{}.mat'.format(task_division[0]))  # file Shreyas needs
+    W = sio.loadmat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))  # file Shreyas needs
 
     # W_loadback = sio.savemat('./result/test_W.mat', W)
     mask = dict()
@@ -401,8 +401,8 @@ if __name__ == "__main__":
             # print(mask[key][0:5, :])
             # break
 
-    sio.savemat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division), mask)
-    print('\nmask saved in ./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
+    sio.savemat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0],args.task_division), mask)
+    print('\nmask saved in ./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0],args.task_division))
     #
     # mask_test = sio.loadmat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
     # for key, value in mask_test.items():

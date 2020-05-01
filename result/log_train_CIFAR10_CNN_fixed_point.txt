@@ -1,0 +1,23 @@
+2020-05-01 03:46:07,513   
+
+
+args = Namespace(LR_finish=0.006, LR_start=0.015, batch_size=40, dropout_prob=0.8, filter_mult=1, flip_lr=False, group_size=20, momentum=0.5, num_epochs=50, task_division='9,1', verbose=False)
+2020-05-01 03:46:07,513    - - - - - Train_CIFAR10_CNN_fixed_point.py  - - - - - - - 
+2020-05-01 03:46:07,832   cloud list [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+2020-05-01 03:46:10,527   train_X.shape torch.Size([40500, 3, 32, 32])
+2020-05-01 03:46:10,528   test_X.shape torch.Size([9000, 3, 32, 32]) 
+2020-05-01 03:46:10,528   valid_X.shape torch.Size([4500, 3, 32, 32])
+2020-05-01 03:46:10,528   train_y.shape torch.Size([40500])
+2020-05-01 03:46:10,528   test_y.shape torch.Size([9000]) 
+2020-05-01 03:46:10,528   valid_y.shape torch.Size([4500])
+2020-05-01 03:46:10,535   dropout 0.800000
+2020-05-01 03:46:10,535   filter mult 1.000000
+2020-05-01 03:46:10,536   batch size 40.000000
+2020-05-01 03:46:10,536   group size 20.000000
+2020-05-01 03:46:10,536   LR start 0.015000
+2020-05-01 03:46:10,536   LR finish 0.006000
+2020-05-01 03:46:10,536   ----------------------------
+2020-05-01 03:46:10,536   2020-05-01 03:46:10.536629
+2020-05-01 03:46:10,536   Training...
+2020-05-01 03:46:10,541   Epoch 0 train_loss 0.0000
