@@ -40,8 +40,8 @@ device = torch.device("cuda")
 np.random.seed(1234)
 os.environ["CUDA_VISIBLE_DEVICES"]= '0'
 
-if os.path.exists('./result/log.txt'):
-    os.remove('./result/log.txt')
+if os.path.exists('./result/log_train_CIFAR10_CNN_fixed_point.txt'):
+    os.remove('./result/log_train_CIFAR10_CNN_fixed_point.txt')
 print("Log file Removed!")
 
 
