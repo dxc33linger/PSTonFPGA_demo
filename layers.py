@@ -231,6 +231,8 @@ class Conv_fixed(object):
                 print('Warning..!%s has almost zero wt  gradients' % (self.name))
 
             print(layer_mask[-5:-1, 0, :, :])
+
+            layer_mask = fixed(layer_mask, 16, self.FL_L_WU)
             self.W -= np.multiply(scaled_WM, layer_mask)
             print(mask.shape, self.W.shape)
             print(self.W[-5:-1, 0, :, :])
@@ -364,7 +366,7 @@ class FC_fixed(object):
 
             self.W -= scaled_WM
             # print('NO mask applied')
-            momentum_fp = fixed(momentum, 16, self.FL_M_WU)
+            momentum_fp = fixed(momentum, 16, self.self.FL_M_WU)
             self.W_momentum = (self.W_momentum * momentum_fp).round(16,
                               self.FL_WM)
 
@@ -396,6 +398,7 @@ class FC_fixed(object):
             if (wtgrad_sparsity > 95.0):
                 print('WARNING..!%s has almost zero wt  gradients' % (self.name))
 
+            layer_mask = fixed(layer_mask, 16, self.self.FL_M_WU)
 
             self.W -= np.multiply(scaled_WM, layer_mask)
             print(mask.shape, self.W.shape)

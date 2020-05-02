@@ -49,21 +49,21 @@ def process_dataset(train_X, test_X, valid_X, train_y, test_y, valid_y):
 
     return train_X, test_X, valid_X, train_y, test_y, valid_y
 
-def valid(cloud_image_valid, valid_X, valid_y):
+def valid(num_image, X, y):
     batch_size_valid = 40
-    num_batches_valid = int(cloud_image_valid / batch_size_valid)
+    num_batches = int(num_image / batch_size_valid)
     valid_error = 0.
     valid_loss = 0.
 
-    for j in range(num_batches_valid):  # testing
-        predictions, valid_loss_batch = cnn.feed_forward(fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
+    for j in range(num_batches):  # testing
+        predictions, valid_loss_batch = cnn.feed_forward(fixed(X[j * batch_size_valid:(j + 1) * batch_size_valid],
                                                                16, FL_A_input),
-                                                         valid_y[j * batch_size_valid:(j + 1) * batch_size_valid],
+                                                         y[j * batch_size_valid:(j + 1) * batch_size_valid],
                                                          train_or_test=0)
-        valid_error += torch.sum(predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
+        valid_error += torch.sum(predictions.cpu() !=y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
         valid_loss += valid_loss_batch
-    valid_error /= cloud_image_valid
-    valid_loss /= num_batches_valid
+    valid_error /= num_image
+    valid_loss /= num_batches
     valid_acc = (100 - (valid_error * 100))
     return valid_acc
 
@@ -340,7 +340,8 @@ if __name__ == "__main__":
 
     # Testing
     logging.info ('loading trained weights...')
-    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))  # file Shreyas needs
+    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))
+
     mask = sio.loadmat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0], args.task_division))
     for key, value in mask.items():
         if re.search('conv', key):
@@ -392,15 +393,9 @@ if __name__ == "__main__":
     valid_full_y = valid_y[0:5000]
     test_full_y = test_y[0: 10000]
 
-
-    train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y = process_dataset(train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y )
-    train_edge_x, test_edge_x, valid_edge_x, train_edge_y, test_edge_y, valid_edge_y = process_dataset(train_edge_x, test_edge_x, valid_edge_x, train_edge_y, test_edge_y, valid_edge_y )
-    train_full_x, test_full_x, valid_full_x, train_full_y, test_full_y, valid_full_y = process_dataset(train_full_x, test_full_x, valid_full_x, train_full_y, test_full_y, valid_full_y )
-
-    cloud_image_train = edge_image_train
-    cloud_image_test = edge_image_test
-    cloud_image_valid = edge_image_valid
-    train_X, test_X, valid_X, train_y, test_y, valid_y =  train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y
+    train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y = process_dataset(train_cloud_x, test_cloud_x, valid_cloud_x, train_cloud_y, test_cloud_y, valid_cloud_y)
+    train_edge_x,  test_edge_x,  valid_edge_x,  train_edge_y,  test_edge_y,  valid_edge_y =  process_dataset(train_edge_x,  test_edge_x,  valid_edge_x,  train_edge_y,  test_edge_y,  valid_edge_y)
+    train_full_x,  test_full_x,  valid_full_x,  train_full_y,  test_full_y,  valid_full_y =  process_dataset(train_full_x,  test_full_x,  valid_full_x,  train_full_y,  test_full_y,  valid_full_y)
 
     # Training
     logging.info("dropout %f" % (args.dropout_prob))
@@ -423,8 +418,8 @@ if __name__ == "__main__":
     logging.info("\nTest after loading pre-trained model........")
     logging.info("On cloud dataset {},  valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
     logging.info("On edge dataset  {}                              valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
-    # logging.info(" On full dataset  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  valid accuracy: {:.2f}%".format( valid(5000, valid_full_x, valid_full_y)))
-    #
+    logging.info(" On full dataset  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  valid accuracy: {:.2f}%".format( valid(5000, valid_full_x, valid_full_y)))
+
 
     for i in range(args.num_epochs):
 

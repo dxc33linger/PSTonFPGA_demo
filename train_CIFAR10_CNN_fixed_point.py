@@ -416,6 +416,7 @@ if __name__ == "__main__":
                 wrong_predictions += torch.sum(predictions.cpu() != train_y_mg).numpy()
                 train_loss += loss
             # logging.info("Loss: %.4f" % cnn.loss)
+            torch.cuda.empty_cache()
 
         elapsed_time = time.time() - start_time
         train_error = wrong_predictions / num_image_train

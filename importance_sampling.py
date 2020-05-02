@@ -16,7 +16,7 @@ import re
 dtype = torch.int64
 device = torch.device("cuda")
 np.random.seed(1234)
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 if os.path.exists('./result/log_importance_sampling.txt'):
     os.remove('./result/log_importance_sampling.txt')
@@ -168,30 +168,45 @@ if __name__ == "__main__":
     cloud_list = task_list[0: task_division[0]]
     logging.info('cloud list %s\n' % (cloud_list))
 
-    num_image_train = 45000 / 10 * task_division[0]
-    num_image_test = 10000 / 10 * task_division[0]
-    num_image_valid = 5000 / 10 * task_division[0]
-    #
-    train_X = train_X[0:num_image_train]
-    valid_X = valid_X[0:num_image_valid]
-    test_X = test_X[0: num_image_test]
-    train_y = train_y[0:num_image_train]
-    valid_y = valid_y[0:num_image_valid]
-    test_y = test_y[0: num_image_test]
+    # num_image_train = 45000 / 10 * task_division[0]
+    # num_image_test = 10000 / 10 * task_division[0]
+    # num_image_valid = 5000 / 10 * task_division[0]
+    # #
+    # train_X = train_X[0:num_image_train]
+    # valid_X = valid_X[0:num_image_valid]
+    # test_X = test_X[0: num_image_test]
+    # train_y = train_y[0:num_image_train]
+    # valid_y = valid_y[0:num_image_valid]
+    # test_y = test_y[0: num_image_test]
+    cloud_image_train = 45000 / 10 * task_division[0]
+    cloud_image_test = 10000 / 10 * task_division[0]
+    cloud_image_valid = 5000 / 10 * task_division[0]
 
-    train_X = fixed(train_X, 16, FL_A_input)
-    valid_X = fixed(valid_X, 16, FL_A_input)
-    test_X = fixed(test_X, 16, FL_A_input)
-    train_y = torch.from_numpy(train_y).to(torch.int64)
-    valid_y = torch.from_numpy(valid_y).to(torch.int64)
-    test_y = torch.from_numpy(test_y).to(torch.int64)
+    # cloud data
 
-    logging.info('train_X.shape %s' % str(train_X.shape))
-    logging.info('test_X.shape %s ' % str(test_X.shape))
-    logging.info('valid_X.shape %s' % str(valid_X.shape))
-    logging.info('train_y.shape %s' % str(train_y.shape))
-    logging.info('test_y.shape %s ' % str(test_y.shape))
-    logging.info('valid_y.shape %s' % str(valid_y.shape))
+    # cloud data
+    train_cloud_x = train_X[0:cloud_image_train]
+    valid_cloud_x = valid_X[0:cloud_image_valid]
+    test_cloud_x = test_X[0: cloud_image_test]
+    train_cloud_y = train_y[0:cloud_image_train]
+    valid_cloud_y = valid_y[0:cloud_image_valid]
+    test_cloud_y = test_y[0: cloud_image_test]
+
+    train_cloud_x = fixed(train_cloud_x, 16, FL_A_input)
+    valid_cloud_x = fixed(valid_cloud_x, 16, FL_A_input)
+    test_cloud_x = fixed(test_cloud_x, 16, FL_A_input)
+    train_cloud_y = torch.from_numpy(train_cloud_y).to(torch.int64)
+    valid_cloud_y = torch.from_numpy(valid_cloud_y).to(torch.int64)
+    test_cloud_y = torch.from_numpy(test_cloud_y).to(torch.int64)
+
+    logging.info('train_cloud_x.shape %s' % str(train_cloud_x.shape))
+    logging.info('test_cloud_x.shape %s ' % str(test_cloud_x.shape))
+    logging.info('valid_cloud_x.shape %s' % str(valid_cloud_x.shape))
+    logging.info('train_cloud_y.shape %s' % str(train_cloud_y.shape))
+    logging.info('test_cloud_y.shape %s ' % str(test_cloud_y.shape))
+    logging.info('valid_cloud_y.shape %s' % str(valid_cloud_y.shape))
+
+
     # Build CNN for CIFAR10
     cnn.append_layer('Conv_fixed',
                      name='conv_0',
@@ -342,18 +357,18 @@ if __name__ == "__main__":
     # cnn.load_params_mat('./result/test_W.mat')
     # print('test_W')
     batch_size_valid = 40
-    num_batches_valid = int(num_image_valid / batch_size_valid)
+    num_batches_valid = int(cloud_image_valid / batch_size_valid)
     valid_error = 0.
     valid_loss = 0.
 
     for j in range(num_batches_valid):  # testing
-        predictions, valid_loss_batch = cnn.feed_forward(fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
+        predictions, valid_loss_batch = cnn.feed_forward(fixed(valid_cloud_x[j * batch_size_valid:(j + 1) * batch_size_valid],
                                                                16, FL_A_input),
-                                                         valid_y[j * batch_size_valid:(j + 1) * batch_size_valid],
+                                                         valid_cloud_y[j * batch_size_valid:(j + 1) * batch_size_valid],
                                                          train_or_test=0)
-        valid_error += torch.sum(predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
+        valid_error += torch.sum(predictions.cpu() != valid_cloud_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
         valid_loss += valid_loss_batch
-    valid_error /= num_image_valid
+    valid_error /= cloud_image_valid
     valid_loss /= num_batches_valid
     valid_acc = (100 - (valid_error * 100))
     logging.info("    valid accuracy: %.2f%%" % valid_acc)
@@ -365,6 +380,7 @@ if __name__ == "__main__":
 
     # W_loadback = sio.savemat('./result/test_W.mat', W)
     mask = dict()
+    active_index = dict()
     # print(type(W['conv_2_W'][0,0,0,0])) ## should be int16
     for key, value in W.items():
         if re.search('conv_', key):
@@ -375,7 +391,9 @@ if __name__ == "__main__":
             # print(metrics)
             num_freeze = int(round(num_channel * threshold))
             arg_max = np.argsort(metrics) # Returns the indices sort an array. small->big
-            # print(arg_max)
+            active_index[key] = arg_max[0 : -num_freeze].tolist()
+            # print('active_list',active_index[key])
+            # print('arg_max', arg_max)
             arg_max_rev = arg_max[::-1][:num_freeze]  # big - > small
             thre = metrics[arg_max_rev[-1]]  # min metrics
             mask[key] = np.ones(value.shape)
@@ -391,7 +409,9 @@ if __name__ == "__main__":
             # print(metrics)
             num_freeze = int(round(num_channel * threshold))
             arg_max = np.argsort(metrics) # Returns the indices sort an array. small->big
-            # print(arg_max)
+            active_index[key] = arg_max[0 : -num_freeze].tolist()
+            # print('active_list', active_index[key])
+            # print('arg_max', arg_max)
             arg_max_rev = arg_max[::-1][:num_freeze]  # big - > small
             thre = metrics[arg_max_rev[-1]]  # min metrics
 
@@ -402,6 +422,8 @@ if __name__ == "__main__":
             # break
 
     sio.savemat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0],args.task_division), mask)
+    sio.savemat('./result/result_{}classes/active_index_CIFAR10_TaskDivision_{}.mat'.format(task_division[0],args.task_division), active_index)
+
     print('\nmask saved in ./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0],args.task_division))
     #
     # mask_test = sio.loadmat('./result/mask_CIFAR10_TaskDivision_{}.mat'.format(args.task_division))
