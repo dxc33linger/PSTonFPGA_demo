@@ -20,6 +20,10 @@ To run CIFAR-10 X+Y (e.g., 9+1) fixed point training,  where X denotes cloud dat
 To load a pre-trained model and do importance sampling, perform:
 
 	python importance_sampling.py -task_division 9,1
+
+To load incrementally learn 1 class online on top of a pre-trained model, perform:
+
+	python incremetnal_learning.py -task_division 9,1 -ne 2
 	
 All the generated files are saved in ./result
 
