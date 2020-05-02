@@ -397,7 +397,6 @@ if __name__ == "__main__":
     logging.info("LR start %f" % (args.LR_start))
     logging.info("LR finish %f" % (args.LR_finish))
 
-    logging.info("\n\n----------------------------")
     currentDT = datetime.datetime.now()
     logging.info(str(currentDT))
     batch_size = args.batch_size
@@ -407,6 +406,7 @@ if __name__ == "__main__":
     Learning_Rate = args.LR_start
     best_valid_acc = 0.0
 
+    logging.info("\n\n--------checking mask--------------------")
 
     cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))
 
@@ -417,7 +417,7 @@ if __name__ == "__main__":
         if re.search('fc', key):
             logging.info('layer {}, sum of mask {} out of shape {}'.format(key, np.sum(value, axis = (0,1)), value.shape))
 
-    logging.info("Test after loading pre-trained model........")
+    logging.info("\n\n-------------Test after loading pre-trained model---------------")
     logging.info("On cloud dataset {},     valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
     logging.info("On edge dataset  {},                               valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
     logging.info(" On full dataset {},                             alid accuracy: {:.2f}%".format(task_list, valid(5000, valid_full_x, valid_full_y)))
@@ -432,6 +432,7 @@ if __name__ == "__main__":
         wrong_predictions = 0
         train_loss = 0
         logging.info('Epoch {} train_loss {:.4f}'.format(i, train_loss))
+        print('\nMask applied\n')  # weight update function
 
         for j in range(num_batches):
             # logging.info("Epoch %d (%d/%d)" % (i+1, j+1, num_batches))
@@ -446,7 +447,7 @@ if __name__ == "__main__":
                 cnn.feed_backward()
                 cnn.weight_gradient()
                 # import pdb; pdb.set_trace()
-                logging.info('mask: ', mask)
+
                 if k == num_groups - 1:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
                                                batch_size, True, mask)
@@ -470,6 +471,10 @@ if __name__ == "__main__":
         num_batches_valid = int(edge_image_valid / batch_size_valid)
         valid_error = 0.
         valid_loss = 0.
+        cnn.save_params_mat(
+            './result/result_{}classes/incremental_{}class_Best_epoch_CIFAR10_W.mat'.format(task_division[0],
+                                                                                            task_division[
+                                                                                                1]))  # file Shreyas needs
 
         for j in range(num_batches_valid):  # testing
             predictions, valid_loss_batch = cnn.feed_forward(

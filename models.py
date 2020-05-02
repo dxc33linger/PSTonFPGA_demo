@@ -72,7 +72,6 @@ class CNN(object):
     def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5, batch_size=100,
            last_group=False, mask=None):
         if mask:
-            print('\nMask applied\n')  # weight update function
             for i in range(self.num_layers):
                 layer_mask = None
                 layer_name = self.layers[self.num_layers-1-i].name + '_W'
