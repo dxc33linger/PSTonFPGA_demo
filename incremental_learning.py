@@ -75,9 +75,9 @@ if __name__ == "__main__":
                         type=float, help="Initial learning rate.")
     parser.add_argument('-fm', '--filter_mult', dest='filter_mult', default=1,
                         type=float, help="Initial learning rate.")
-    parser.add_argument('-ls', '--LR_start', dest='LR_start', default=0.015,
+    parser.add_argument('-ls', '--LR_start', dest='LR_start', default=0.0015,
                         type=float, help="Initial learning rate.")
-    parser.add_argument('-lf', '--LR_finish', dest='LR_finish', default=0.006,
+    parser.add_argument('-lf', '--LR_finish', dest='LR_finish', default=0.0006,
                         type=float, help="Ending learning rate.")
     parser.add_argument('-mo', '--momentum', dest='momentum', default=0.5,
                         type=float, help="Momentum factor for learning")
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument('-gs', '--group_size', dest='group_size',
                         default=20, type=int, help="Group size that can be fit in on-chip memory")
     parser.add_argument('-ne', '--num_epochs', dest='num_epochs',
-                        default=50, type=int, help="Number of epochs for training")
+                        default= 2, type=int, help="Number of epochs for training")
     parser.add_argument('-fl', '--flip_lr', dest='flip_lr', default=False,
                         type=bool, help="Data augmentation by flipping images horizonatally")
     parser.add_argument('-vb', '--verbose', dest='verbose', default=False,
@@ -417,14 +417,15 @@ if __name__ == "__main__":
         if re.search('fc', key):
             logging.info('layer {}, sum of mask {} out of shape {}'.format(key, np.sum(value, axis = (0,1)), value.shape))
 
+    cloud_acc = valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)
+    edge_acc = valid(edge_image_valid, valid_edge_x, valid_edge_y)
+    full_acc = valid(5000, valid_full_x, valid_full_y)
     logging.info("\n\n-------------Test after loading pre-trained model---------------")
-    logging.info("On cloud dataset {},     valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
-    logging.info("On edge dataset  {},                               valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
-    logging.info(" On full dataset {},                             alid accuracy: {:.2f}%".format(task_list, valid(5000, valid_full_x, valid_full_y)))
-
+    logging.info("On cloud dataset {}, valid accuracy: {:.2f}%".format(cloud_list, cloud_acc))
+    logging.info("On edge dataset  {},                         valid accuracy: {:.2f}%".format(edge_list, edge_acc))
+    logging.info("On full dataset {}, valid accuracy: {:.2f}%".format(task_list, full_acc))
 
     for i in range(args.num_epochs):
-
         start_time = time.time()
         IX = np.random.permutation(np.arange(edge_image_train))
         train_X_shuffled = train_edge_x[IX, :]
@@ -432,9 +433,9 @@ if __name__ == "__main__":
         wrong_predictions = 0
         train_loss = 0
         logging.info('Epoch {} train_loss {:.4f}'.format(i, train_loss))
-        print('\nMask applied\n')  # weight update function
+        print('\nTraining.....Mask applied\n')  # weight update function
 
-        for j in range(num_batches):
+        for j in range(int(num_batches)):
             # logging.info("Epoch %d (%d/%d)" % (i+1, j+1, num_batches))
             train_X_mb = train_X_shuffled[j * batch_size:(j + 1) * batch_size]  # mini-batch
             train_y_mb = train_y_shuffled[j * batch_size:(j + 1) * batch_size]
@@ -446,7 +447,6 @@ if __name__ == "__main__":
                 # logging.info('Epoch {} Batch {} Loss {:.4f}'.format(i, j, loss))
                 cnn.feed_backward()
                 cnn.weight_gradient()
-                # import pdb; pdb.set_trace()
 
                 if k == num_groups - 1:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
@@ -466,44 +466,22 @@ if __name__ == "__main__":
         train_loss /= (num_batches * num_groups)
         logging.info("Epoch %d takes %.2f mins" % (i + 1, elapsed_time / 60))
         logging.info("Train accuracy: %.2f%%" % (100 - (train_error * 100)))
-
-        batch_size_valid = 40
-        num_batches_valid = int(edge_image_valid / batch_size_valid)
-        valid_error = 0.
-        valid_loss = 0.
-        cnn.save_params_mat(
-            './result/result_{}classes/incremental_{}class_Best_epoch_CIFAR10_W.mat'.format(task_division[0],
-                                                                                            task_division[
-                                                                                                1]))  # file Shreyas needs
-
-        for j in range(num_batches_valid):  # testing
-            predictions, valid_loss_batch = cnn.feed_forward(
-                fixed(valid_X[j * batch_size_valid:(j + 1) * batch_size_valid],
-                      16, FL_A_input), valid_y[j * batch_size_valid:(j + 1) * batch_size_valid], train_or_test=0)
-            valid_error += torch.sum(
-                predictions.cpu() != valid_y[j * batch_size_valid:(j + 1) * batch_size_valid]).numpy()
-            valid_loss += valid_loss_batch
-        valid_error /= edge_image_valid
-        valid_loss /= num_batches_valid
-
         train_acc = (100 - (train_error * 100))
-        valid_acc = (100 - (valid_error * 100))
-
-        if (valid_acc > best_valid_acc):
-            best_valid_acc = (100 - (valid_error * 100))
-            best_epoch = i + 1
-            cnn.save_params_mat('./result/result_{}classes/incremental_{}class_Best_epoch_CIFAR10_W.mat'.format(task_division[0], task_division[1]))  # file Shreyas needs
 
         logging.info("    --------------------------------------------")
         logging.info("Epoch %d, time taken %.2f mins " % (i + 1, elapsed_time / 60))
         logging.info("    Learning_Rate: %.3e" % Learning_Rate)
         logging.info("    train accuracy: %.2f%%" % train_acc)
         logging.info("    train loss: %.4f" % train_loss)
-        logging.info("    valid accuracy: %.2f%%" % valid_acc)
-        logging.info("    valid loss: %.4f" % valid_loss)
-        logging.info("    \t best valid accuracy: %.2f%%" % best_valid_acc)
-        logging.info("    Genralization error: %.2f%%" % abs(train_acc - valid_acc))
-        logging.info("    best epoch: %d" % best_epoch)
+        cloud_acc = valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)
+        edge_acc = valid(edge_image_valid, valid_edge_x, valid_edge_y)
+        full_acc = valid(5000, valid_full_x, valid_full_y)
+        logging.info("On cloud dataset {}, valid accuracy: {:.2f}%".format(cloud_list, cloud_acc))
+        logging.info("On edge dataset  {},                         valid accuracy: {:.2f}%".format(edge_list, edge_acc))
+        logging.info("On full dataset {}, valid accuracy: {:.2f}%\n\n".format(task_list, full_acc))
+
+        cnn.save_params_mat('./result/result_{}classes/incremental_{}class_Best_epoch_CIFAR10_W.mat'.format(task_division[0], task_division[1]))  # file Shreyas needs
+
         if (i == 10):
             Learning_Rate -= 0.001
         if (i == 30):
@@ -514,6 +492,5 @@ if __name__ == "__main__":
             Learning_Rate -= 0.0005
         if (i == 120):
             Learning_Rate -= 0.0005
-        # cnn.save_params_mat('CIFAR10_W.mat')
 
 
