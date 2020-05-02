@@ -340,14 +340,6 @@ if __name__ == "__main__":
 
     # Testing
     logging.info ('loading trained weights...')
-    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))
-
-    mask = sio.loadmat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0], args.task_division))
-    for key, value in mask.items():
-        if re.search('conv', key):
-            print(key, np.sum(value, axis = (0,1,2,3)))
-        if re.search('fc', key):
-            print(key, np.sum(value, axis = (0,1)))
 
     data = sio.loadmat('../order_cifar10.mat')
     train_X = data['train_X']
@@ -415,10 +407,20 @@ if __name__ == "__main__":
     Learning_Rate = args.LR_start
     best_valid_acc = 0.0
 
+
+    cnn.load_params_mat('./result/result_{}classes/Best_epoch_CIFAR10_W.mat'.format(task_division[0]))
+
+    mask = sio.loadmat('./result/result_{}classes/mask_CIFAR10_TaskDivision_{}.mat'.format(task_division[0], args.task_division))
+    for key, value in mask.items():
+        if re.search('conv', key):
+            logging.info('layer {}, sum of mask {} out of shape{}'.format(key, np.sum(value, axis = (0,1,2,3)), value.shape))
+        if re.search('fc', key):
+            logging.info('layer {}, sum of mask {} out of shape {}'.format(key, np.sum(value, axis = (0,1)), value.shape))
+
     logging.info("Test after loading pre-trained model........")
     logging.info("On cloud dataset {},     valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
     logging.info("On edge dataset  {},                               valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
-    # logging.info(" On full dataset {},                             alid accuracy: {:.2f}%".format(task_list, valid(5000, valid_full_x, valid_full_y)))
+    logging.info(" On full dataset {},                             alid accuracy: {:.2f}%".format(task_list, valid(5000, valid_full_x, valid_full_y)))
 
 
     for i in range(args.num_epochs):
@@ -448,6 +450,8 @@ if __name__ == "__main__":
                 if k == num_groups - 1:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
                                                batch_size, True, mask)
+
+
                 else:
                     cnn.apply_weight_gradients(Learning_Rate, args.momentum,
                                                batch_size, False, mask)
@@ -483,7 +487,7 @@ if __name__ == "__main__":
         if (valid_acc > best_valid_acc):
             best_valid_acc = (100 - (valid_error * 100))
             best_epoch = i + 1
-            cnn.save_params_mat('./result/Best_epoch_CIFAR10_W.mat')  # file Shreyas needs
+            cnn.save_params_mat('./result/result_{}classes/incremental_{}class_Best_epoch_CIFAR10_W.mat'.format(task_division[0], task_division[1]))  # file Shreyas needs
 
         logging.info("    --------------------------------------------")
         logging.info("Epoch %d, time taken %.2f mins " % (i + 1, elapsed_time / 60))

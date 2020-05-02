@@ -9,9 +9,9 @@ class Conv_fixed(object):
                  pads, FL_W, FL_WM, FL_WG, FL_AO, FL_DI, FL_L_WG,
                  FL_L_WU, FL_M_WU, scale, name, dropout_prob):
         '''
-        Implement a simple 2D convolutional layer, stride size = 1, weights 
+        Implement a simple 2D convolutional layer, stride size = 1, weights
         are initialized uniformly, biases is initialized as zeros.
-        Convolution implemented as matmul inspired by 
+        Convolution implemented as matmul inspired by
         https://github.com/wiseodd/hipsternet
         FL_W: fraction length of weights
         FL_WM: fraction length of weight momentum
@@ -36,22 +36,22 @@ class Conv_fixed(object):
         fan_in = num_channels * kernel_size * kernel_size
         fan_out = num_filters * kernel_size * kernel_size
         weight_std = np.sqrt(2. / fan_in)
-        
-        
+
+
         # data = sio.loadmat('Best_epoch_CIFAR10_W_fl.mat')
         # wt = data[name+'_W']
-        
+
         wt = np.random.normal(loc=0.0, scale=weight_std, size=(num_filters, num_channels,kernel_size, kernel_size))
         self.W = fixed(wt, 16, FL_W)
         # self.W = wt
-                    
-                    
+
+
         # self.W= fixed(np.random.uniform(
-                  # low = -np.sqrt(6. / (num_channels*input_map_size[0]*input_map_size[0] + num_filters*input_map_size[0]*input_map_size[0])), 
+                  # low = -np.sqrt(6. / (num_channels*input_map_size[0]*input_map_size[0] + num_filters*input_map_size[0]*input_map_size[0])),
                   # high = np.sqrt(6. / (num_channels*input_map_size[0]*input_map_size[0] + num_filters*input_map_size[0]*input_map_size[0])),
                   # size=(num_filters, num_channels,kernel_size, kernel_size)
                   # ), 16, FL_W)
-                    
+
         self.W_momentum = zeros((num_filters, num_channels,
                           kernel_size, kernel_size), 16, FL_WM)
         self.type = 'Conv'
@@ -70,9 +70,9 @@ class Conv_fixed(object):
         '''
         Perform feed forward pass for input (very naive implementation for easy
         use as a reference for RTL implementation)
-        input shape: (batch_size, num_channels, input_map_size[0], 
+        input shape: (batch_size, num_channels, input_map_size[0],
                       input_map_size[1])
-        Note: here weights are not flipped before convolution unlike numpy and 
+        Note: here weights are not flipped before convolution unlike numpy and
         other implementations.
         '''
         # t_start = time.time()
@@ -92,18 +92,18 @@ class Conv_fixed(object):
         #bias = self.b.unsqueeze(0).unsqueeze(2).unsqueeze(3)
         # import pdb;pdb.set_trace()
 
-        
+
         if(train_or_test==0): # for testing
             p_r = fixed (self.dropout_prob,self.convolved.WL,self.convolved.FL)
             self.drop_convolved = (self.convolved * p_r).round(self.convolved.WL,self.convolved.FL,True) # or self.convolved*self.dropout_prob
         else:
             self.drop_convolved, self.dropout_derivatives = self.convolved.dropout(self.dropout_prob)
             self.dropout_derivatives = self.dropout_derivatives.to(torch.int64)
-            
+
         self.biased = self.drop_convolved
         self.activation_derivatives = (self.biased.value >= 0).to(torch.int64)
         self.output = self.biased
-        self.output.value = torch.where(self.output.value > 0, 
+        self.output.value = torch.where(self.output.value > 0,
                       self.output.value, torch.zeros_like(self.output.value))
         # time_elased = time.time() - t_start
         # print("%s feed forward: %.3f sec" % (self.name, time_elased))
@@ -112,11 +112,11 @@ class Conv_fixed(object):
     def feed_backward(self, output_gradients, skip=False):
         # t_start = time.time()
         self.local_gradients = fixed(output_gradients.value * \
-                          self.activation_derivatives, 
+                          self.activation_derivatives,
                      output_gradients.WL, output_gradients.FL)
-                     
+
         self.local_gradients = fixed(self.local_gradients.value * \
-                          self.dropout_derivatives, 
+                          self.dropout_derivatives,
                      output_gradients.WL, output_gradients.FL)
         if skip:
             return None
@@ -137,9 +137,9 @@ class Conv_fixed(object):
         W_transposed = self.W.copy().transpose(0,1)
         flip_index = torch.arange(start=self.kernel_size-1,
                      end=-1, step=-1, dtype=torch.long, device=self.W.device)
-        W_transposed.value = torch.index_select(W_transposed.value, 2, 
+        W_transposed.value = torch.index_select(W_transposed.value, 2,
                                                 flip_index)
-        W_transposed.value = torch.index_select(W_transposed.value, 3, 
+        W_transposed.value = torch.index_select(W_transposed.value, 3,
                                                 flip_index)
         self.input_gradients = conv2D_fixed(local_gradients_padded,
             W_transposed, self.FL_DI)
@@ -151,7 +151,7 @@ class Conv_fixed(object):
         # t_start = time.time()
         if groups > 0:
             group_size = int(self.num_images / groups)
-            input_list = [fixed(self.input_padded[i*group_size:(i+1)*group_size], 
+            input_list = [fixed(self.input_padded[i*group_size:(i+1)*group_size],
                 self.input_padded.WL, self.input_padded.FL) for i in range(groups)]
             local_gradients_list = [ \
                 fixed(self.local_gradients[i*group_size:(i+1)*group_size],
@@ -167,12 +167,12 @@ class Conv_fixed(object):
                                         local_gradients_tranposed, self.FL_WG)
             self.weight_gradients.transpose(0,1)
 
-    def apply_weight_gradients(self, learning_rate, momentum, 
+    def apply_weight_gradients(self, learning_rate, momentum,
                             batch_size, last_group):# add mask within this function to enable segmented training
         # ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
-        learning_rate_scaled = fixed(learning_rate / self.scale / batch_size, 
+        learning_rate_scaled = fixed(learning_rate / self.scale / batch_size,
                                      16, self.FL_L_WG)
-        
+
         if self.num_images == batch_size:
             num_groups = len(self.weight_gradients)
             for i in range(num_groups):
@@ -181,13 +181,13 @@ class Conv_fixed(object):
                 self.W_momentum += scaled_WG
             last_group = True
         else:
-            scaled_WG = (self.weight_gradients * learning_rate_scaled).round(16, 
+            scaled_WG = (self.weight_gradients * learning_rate_scaled).round(16,
                      self.FL_WM)
             self.W_momentum += scaled_WG  # momentum updating
         if last_group:
             scale_fp = fixed(self.scale, 16, self.FL_L_WU)
             scaled_WM = (scale_fp * self.W_momentum).round(16, self.FL_W) # momentum
-            
+
             nonzero_grad = np.count_nonzero(scaled_WM.value.cpu().numpy())
             total_params = np.size(scaled_WM.value.cpu().numpy())
             zero_grad = total_params - nonzero_grad
@@ -198,7 +198,7 @@ class Conv_fixed(object):
             self.W -= scaled_WM
             # print('NO mask applied')
             momentum_fp = fixed(momentum, 16, self.FL_M_WU)
-            self.W_momentum = (self.W_momentum * momentum_fp).round(16, 
+            self.W_momentum = (self.W_momentum * momentum_fp).round(16,
                               self.FL_WM)
 
 
@@ -230,15 +230,14 @@ class Conv_fixed(object):
             if (wtgrad_sparsity > 95.0):
                 print('Warning..!%s has almost zero wt  gradients' % (self.name))
 
-            print(layer_mask[-5:-1, 0, :, :])
+            # print(layer_mask[-5:-1, 0, :, :])
 
-            layer_mask = fixed(layer_mask, 16, self.FL_L_WU)
-            self.W -= np.multiply(scaled_WM, layer_mask)
-            print(mask.shape, self.W.shape)
-            print(self.W[-5:-1, 0, :, :])
-            print('\nMask applied\n')  # weight update function
-
-
+            # import pdb;pdb.set_trace()
+            #----------------------------------------------
+            fixed_layer_mask = fixed(layer_mask, 16, 15)
+            masked_WM = (fixed_layer_mask * scaled_WM).round(16, self.FL_W)
+            #------------------------------------------------
+            self.W -= masked_WM
             momentum_fp = fixed(momentum, 16, self.FL_M_WU)
             self.W_momentum = (self.W_momentum * momentum_fp).round(16, self.FL_WM)
 
@@ -249,20 +248,20 @@ class FC_fixed(object):
                     FL_AO, FL_DI, FL_WM, FL_L_WG, FL_L_WU, FL_M_WU,
                     scale, relu=True, dropout_prob=1):
         '''
-        Implement a simple fully connected layer, weights are initialized 
+        Implement a simple fully connected layer, weights are initialized
         uniformly, biases is initialized as zeros.
         '''
         self.input_dim = input_dim
         self.num_units = num_units
         weight_bound = np.sqrt(6. / (input_dim + num_units))
-        
+
         # data = sio.loadmat('Best_epoch_CIFAR10_W_fl.mat')
         # wt = data[name+'_W']
         # print ('initializing weights...')
         wt = np.random.uniform(low=-weight_bound,high=weight_bound,size=(input_dim, num_units))
-        
+
         self.W = fixed(wt, 16, FL_W)
-        
+
         self.W_momentum = zeros((input_dim, num_units), 16, FL_WM)
         self.type = 'FC'
         self.FL_W = FL_W
@@ -277,7 +276,7 @@ class FC_fixed(object):
         self.relu = relu
         self.name = name
         self.dropout_prob = dropout_prob
-         
+
     def feed_forward(self, input, train_or_test):
         '''
         Perform feed forward pass for input (very naive implementation for easy
@@ -298,12 +297,12 @@ class FC_fixed(object):
         self.drop_output = self.output
         if self.relu:
             self.activation_derivatives = (self.drop_output >= 0)
-            self.drop_output.value = torch.where(self.drop_output.value > 0, 
+            self.drop_output.value = torch.where(self.drop_output.value > 0,
                    self.drop_output.value, torch.zeros_like(self.drop_output.value))
         # time_elased = time.time() - t_start
         # print("%s feed forward: %.3f sec" % (self.name, time_elased))
         return self.drop_output
-    
+
     def feed_backward(self, output_gradients):
         # t_start = time.time()
         # self.local_gradients = fixed(output_gradients.value * \
@@ -320,12 +319,12 @@ class FC_fixed(object):
         # time_elased = time.time() - t_start
         # print("%s feed backward: %.3f sec" % (self.name, time_elased))
         return self.input_gradients
- 
+
     def weight_gradient(self, groups=0):
         # t_start = time.time()
         if groups > 0:
             group_size = int(self.num_images / groups)
-            input_list = [fixed(self.input[i*group_size:(i+1)*group_size], 
+            input_list = [fixed(self.input[i*group_size:(i+1)*group_size],
                 self.input.WL, self.input.FL) for i in range(groups)]
             local_gradients_list = [ \
                 fixed(self.local_gradients[i*group_size:(i+1)*group_size],
@@ -355,12 +354,12 @@ class FC_fixed(object):
         if last_group:
             scale_fp = fixed(self.scale, 16, self.FL_L_WU)
             scaled_WM = (scale_fp * self.W_momentum).round(16, self.FL_W)
-            
+
             nonzero_grad = np.count_nonzero(scaled_WM.value.cpu().numpy())
             total_params = np.size(scaled_WM.value.cpu().numpy())
             zero_grad = total_params - nonzero_grad
             wtgrad_sparsity = zero_grad*100.0/total_params
-            
+
             if (wtgrad_sparsity > 95.0):
                 print('WARNING..!%s has almost zero wt  gradients'%(self.name))
 
@@ -399,13 +398,12 @@ class FC_fixed(object):
                 print('WARNING..!%s has almost zero wt  gradients' % (self.name))
 
             # layer_mask = fixed(layer_mask, 16, self.FL_W)
-            layer_mask = fixed(layer_mask, 16, scaled_WM.FL)
-
-            self.W -= np.multiply(scaled_WM, layer_mask)
-            print(mask.shape, self.W.shape)
-            print(self.W[-5:-1, 0, :, :])
-            print('Mask applied')  # weight update function
-
+            # import pdb;pdb.set_trace()
+            #----------------------------------------------
+            fixed_layer_mask = fixed(layer_mask, 16, 15)
+            masked_WM = (fixed_layer_mask * scaled_WM).round(16, self.FL_W)
+            #------------------------------------------------
+            self.W -= masked_WM
             momentum_fp = fixed(momentum, 16, self.FL_M_WU)
             self.W_momentum = (self.W_momentum * momentum_fp).round(16,
                                                                     self.FL_WM)
@@ -433,7 +431,7 @@ class Flatten(object):
     def weight_gradient(self, groups=0):
         pass
 
-    def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5, 
+    def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5,
                                batch_size=100, last_group=False):
         pass
 
@@ -502,7 +500,7 @@ class MaxPooling(object):
     def weight_gradient(self, groups=0):
         pass
 
-    def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5, 
+    def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5,
                                     batch_size=100, last_group=False):
         pass
 
@@ -524,10 +522,10 @@ class SquareHingeLoss(object):
         if labels is None:
             return self.predictions
         self.labels = fixed((2*(torch.eye(self.num_classes,
-            dtype=torch.int64).index_select(0, 
-            labels.type(torch.long)))-1)*(2**logits.FL), 
+            dtype=torch.int64).index_select(0,
+            labels.type(torch.long)))-1)*(2**logits.FL),
             logits.WL, logits.FL)
-        rough_loss = (self.logits.get_real_torch() - 
+        rough_loss = (self.logits.get_real_torch() -
                self.labels.get_real_torch()) ** 2 / 2.
         self.conditions = self.logits.get_real_torch() * \
                self.labels.get_real_torch()

@@ -72,17 +72,15 @@ class CNN(object):
     def apply_weight_gradients(self, learning_rate=1.0, momentum=0.5, batch_size=100,
            last_group=False, mask=None):
         if mask:
+            print('\nMask applied\n')  # weight update function
             for i in range(self.num_layers):
                 layer_mask = None
                 layer_name = self.layers[self.num_layers-1-i].name + '_W'
                 if re.search('conv', layer_name) or re.search('fc', layer_name):
                     layer_mask = mask[layer_name]
-                    print('check', layer_name)
                     self.input_gradients = self.layers[self.num_layers-1-i].apply_weight_gradients_mask(learning_rate,
                                                                         momentum, batch_size, last_group, layer_mask)
                 else: # non-conv non-FC layers
-                    print(layer_name)
-
                     self.input_gradients = self.layers[self.num_layers - 1 - i].apply_weight_gradients(learning_rate,
                                                                                     momentum, batch_size, last_group)
         else: #regular training

@@ -411,10 +411,9 @@ if __name__ == "__main__":
             arg_max = np.argsort(metrics) # Returns the indices sort an array. small->big
             active_index[key] = arg_max[0 : -num_freeze].tolist()
             # print('active_list', active_index[key])
-            # print('arg_max', arg_max)
+            # print('arg_max', value[arg_max,:])
             arg_max_rev = arg_max[::-1][:num_freeze]  # big - > small
             thre = metrics[arg_max_rev[-1]]  # min metrics
-
             mask[key] = np.ones(value.shape)
             mask[key][arg_max_rev.tolist(), :] = 0.0  ## mask = 0 means these pixels to be frozen; mask = 1 means these pixels will be updated in the future
             print('mask generated for layer %s, shape: %s ' % (key, mask[key].shape))
