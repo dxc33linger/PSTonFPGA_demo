@@ -405,7 +405,7 @@ if __name__ == "__main__":
     logging.info("LR start %f" % (args.LR_start))
     logging.info("LR finish %f" % (args.LR_finish))
 
-    logging.info("----------------------------")
+    logging.info("\n\n----------------------------")
     currentDT = datetime.datetime.now()
     logging.info(str(currentDT))
     batch_size = args.batch_size
@@ -415,18 +415,18 @@ if __name__ == "__main__":
     Learning_Rate = args.LR_start
     best_valid_acc = 0.0
 
-    logging.info("\nTest after loading pre-trained model........")
-    logging.info("On cloud dataset {},  valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
-    logging.info("On edge dataset  {}                              valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
-    logging.info(" On full dataset  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],  valid accuracy: {:.2f}%".format( valid(5000, valid_full_x, valid_full_y)))
+    logging.info("Test after loading pre-trained model........")
+    logging.info("On cloud dataset {},     valid accuracy: {:.2f}%".format(cloud_list, valid(cloud_image_valid, valid_cloud_x, valid_cloud_y)))
+    logging.info("On edge dataset  {},                               valid accuracy: {:.2f}%".format(edge_list, valid(edge_image_valid, valid_edge_x, valid_edge_y)))
+    # logging.info(" On full dataset {},                             alid accuracy: {:.2f}%".format(task_list, valid(5000, valid_full_x, valid_full_y)))
 
 
     for i in range(args.num_epochs):
 
         start_time = time.time()
         IX = np.random.permutation(np.arange(edge_image_train))
-        train_X_shuffled = train_X[IX, :]
-        train_y_shuffled = train_y[IX]
+        train_X_shuffled = train_edge_x[IX, :]
+        train_y_shuffled = train_edge_y[IX]
         wrong_predictions = 0
         train_loss = 0
         logging.info('Epoch {} train_loss {:.4f}'.format(i, train_loss))
