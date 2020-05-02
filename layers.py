@@ -301,7 +301,8 @@ class FC_fixed(object):
                    self.drop_output.value, torch.zeros_like(self.drop_output.value))
         # time_elased = time.time() - t_start
         # print("%s feed forward: %.3f sec" % (self.name, time_elased))
-        return self.drop_output
+        self.output = self.drop_output
+        return self.output
 
     def feed_backward(self, output_gradients):
         # t_start = time.time()
@@ -532,7 +533,7 @@ class SquareHingeLoss(object):
         rough_loss = torch.where(self.conditions > 1.,
             torch.zeros_like(rough_loss), rough_loss)
         self.loss = torch.mean(rough_loss)
-
+        self.output = None
         return self.predictions, self.loss
 
     def feed_backward(self):

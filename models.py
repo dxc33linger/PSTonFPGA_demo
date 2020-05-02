@@ -46,16 +46,24 @@ class CNN(object):
             self.layers.append(SquareHingeLoss(*args, **kwargs))
         self.num_layers += 1
         
-    def feed_forward(self, input, labels=None, train_or_test=1):
+    def feed_forward(self, input, labels=None, train_or_test=1, record = False):
         self.logits = input
+        if record: output_dict = dict()
+
         for i in range(self.num_layers - 1):
             self.logits = self.layers[i].feed_forward(self.logits,train_or_test)
+            if record:
+                output_dict[self.layers[i].name] = self.layers[i].output.value.cpu().numpy()
+                print(self.layers[i].name)
+        if record:
+            sio.savemat('./result/intermediate_output_post_activation.mat', output_dict)
         if labels is None:
             self.predictions = self.layers[-1].feed_forward(self.logits)
             return self.predictions
         else:
             self.predictions, self.loss = \
                 self.layers[-1].feed_forward(self.logits, labels)
+
             return self.predictions, self.loss
     
     def feed_backward(self):

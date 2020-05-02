@@ -1,77 +1,63 @@
-2020-05-01 20:19:13,231   
+2020-05-02 15:28:41,737   
 
 
-args = Namespace(LR_finish=0.0006, LR_start=0.0015, batch_size=40, dropout_prob=0.8, filter_mult=1, flip_lr=False, group_size=20, momentum=0.5, num_epochs=5, task_division='9,1', verbose=False)
-2020-05-01 20:19:13,233    - - - - - incremental_learning.py  - - - - - - - 
-2020-05-01 20:19:13,234   
+args = Namespace(LR_finish=0.0006, LR_start=0.0015, batch_size=40, dropout_prob=0.8, filter_mult=1, flip_lr=False, group_size=20, momentum=0.5, num_epochs=2, task_division='9,1', verbose=False)
+2020-05-02 15:28:41,738    - - - - - incremental_learning.py  - - - - - - - 
+2020-05-02 15:28:41,738   
 cloud list [0, 1, 2, 3, 4, 5, 6, 7, 8]
-2020-05-01 20:19:15,388   loading trained weights...
-2020-05-01 20:19:15,686   
+2020-05-02 15:28:43,762   loading trained weights...
+2020-05-02 15:28:44,059   
 ......Edge list [9]
-2020-05-01 20:19:16,835   train_X.shape torch.Size([40500, 3, 32, 32])
-2020-05-01 20:19:16,843   test_X.shape torch.Size([9000, 3, 32, 32]) 
-2020-05-01 20:19:16,843   valid_X.shape torch.Size([4500, 3, 32, 32])
-2020-05-01 20:19:16,843   train_y.shape torch.Size([40500])
-2020-05-01 20:19:16,844   test_y.shape torch.Size([9000]) 
-2020-05-01 20:19:16,844   valid_y.shape torch.Size([4500])
+2020-05-02 15:28:44,747   train_X.shape torch.Size([40500, 3, 32, 32])
+2020-05-02 15:28:44,747   test_X.shape torch.Size([9000, 3, 32, 32]) 
+2020-05-02 15:28:44,748   valid_X.shape torch.Size([4500, 3, 32, 32])
+2020-05-02 15:28:44,748   train_y.shape torch.Size([40500])
+2020-05-02 15:28:44,748   test_y.shape torch.Size([9000]) 
+2020-05-02 15:28:44,748   valid_y.shape torch.Size([4500])
 
-2020-05-01 20:19:17,005   train_X.shape torch.Size([4500, 3, 32, 32])
-2020-05-01 20:19:17,007   test_X.shape torch.Size([1000, 3, 32, 32]) 
-2020-05-01 20:19:17,007   valid_X.shape torch.Size([500, 3, 32, 32])
-2020-05-01 20:19:17,007   train_y.shape torch.Size([4500])
-2020-05-01 20:19:17,008   test_y.shape torch.Size([1000]) 
-2020-05-01 20:19:17,008   valid_y.shape torch.Size([500])
+2020-05-02 15:28:44,835   train_X.shape torch.Size([4500, 3, 32, 32])
+2020-05-02 15:28:44,835   test_X.shape torch.Size([1000, 3, 32, 32]) 
+2020-05-02 15:28:44,836   valid_X.shape torch.Size([500, 3, 32, 32])
+2020-05-02 15:28:44,836   train_y.shape torch.Size([4500])
+2020-05-02 15:28:44,836   test_y.shape torch.Size([1000]) 
+2020-05-02 15:28:44,836   valid_y.shape torch.Size([500])
 
-2020-05-01 20:19:18,140   train_X.shape torch.Size([45000, 3, 32, 32])
-2020-05-01 20:19:18,141   test_X.shape torch.Size([10000, 3, 32, 32]) 
-2020-05-01 20:19:18,141   valid_X.shape torch.Size([5000, 3, 32, 32])
-2020-05-01 20:19:18,142   train_y.shape torch.Size([45000])
-2020-05-01 20:19:18,142   test_y.shape torch.Size([10000]) 
-2020-05-01 20:19:18,142   valid_y.shape torch.Size([5000])
+2020-05-02 15:28:45,488   train_X.shape torch.Size([45000, 3, 32, 32])
+2020-05-02 15:28:45,488   test_X.shape torch.Size([10000, 3, 32, 32]) 
+2020-05-02 15:28:45,489   valid_X.shape torch.Size([5000, 3, 32, 32])
+2020-05-02 15:28:45,489   train_y.shape torch.Size([45000])
+2020-05-02 15:28:45,489   test_y.shape torch.Size([10000]) 
+2020-05-02 15:28:45,489   valid_y.shape torch.Size([5000])
 
-2020-05-01 20:19:18,143   dropout 0.800000
-2020-05-01 20:19:18,143   filter mult 1.000000
-2020-05-01 20:19:18,143   batch size 40.000000
-2020-05-01 20:19:18,144   group size 20.000000
-2020-05-01 20:19:18,144   LR start 0.001500
-2020-05-01 20:19:18,144   LR finish 0.000600
-2020-05-01 20:19:18,144   2020-05-01 20:19:18.144856
-2020-05-01 20:19:18,145   
+2020-05-02 15:28:45,489   dropout 0.800000
+2020-05-02 15:28:45,490   filter mult 1.000000
+2020-05-02 15:28:45,490   batch size 40.000000
+2020-05-02 15:28:45,490   group size 20.000000
+2020-05-02 15:28:45,490   LR start 0.001500
+2020-05-02 15:28:45,490   LR finish 0.000600
+2020-05-02 15:28:45,490   2020-05-02 15:28:45.490934
+2020-05-02 15:28:45,491   
 
 --------checking mask--------------------
-2020-05-01 20:19:18,149   layer conv_2_W, sum of mask 432.0 out of shape(32, 16, 3, 3)
-2020-05-01 20:19:18,150   layer conv_1_W, sum of mask 288.0 out of shape(16, 16, 3, 3)
-2020-05-01 20:19:18,151   layer conv_5_W, sum of mask 3456.0 out of shape(64, 64, 3, 3)
-2020-05-01 20:19:18,151   layer conv_0_W, sum of mask 54.0 out of shape(16, 3, 3, 3)
-2020-05-01 20:19:18,151   layer fc_W, sum of mask 1020.0 out of shape (1024, 10)
-2020-05-01 20:19:18,152   layer conv_4_W, sum of mask 1728.0 out of shape(64, 32, 3, 3)
-2020-05-01 20:19:18,152   layer conv_3_W, sum of mask 864.0 out of shape(32, 32, 3, 3)
-2020-05-01 20:19:18,152   
+2020-05-02 15:28:45,492   layer conv_2_W, sum of mask 432.0 out of shape(32, 16, 3, 3)
+2020-05-02 15:28:45,493   layer conv_1_W, sum of mask 288.0 out of shape(16, 16, 3, 3)
+2020-05-02 15:28:45,493   layer conv_5_W, sum of mask 3456.0 out of shape(64, 64, 3, 3)
+2020-05-02 15:28:45,493   layer conv_0_W, sum of mask 54.0 out of shape(16, 3, 3, 3)
+2020-05-02 15:28:45,493   layer fc_W, sum of mask 1020.0 out of shape (1024, 10)
+2020-05-02 15:28:45,494   layer conv_4_W, sum of mask 1728.0 out of shape(64, 32, 3, 3)
+2020-05-02 15:28:45,494   layer conv_3_W, sum of mask 864.0 out of shape(32, 32, 3, 3)
+2020-05-02 15:29:41,073   
 
 -------------Test after loading pre-trained model---------------
-2020-05-01 20:19:55,890   On cloud dataset [0, 1, 2, 3, 4, 5, 6, 7, 8], valid accuracy: 71.49%
-2020-05-01 20:20:00,066   On edge dataset  [9],                         valid accuracy: 4.00%
-2020-05-01 20:20:43,418   On full dataset [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], valid accuracy: 64.08%
-2020-05-01 20:20:43,419   Epoch 0 train_loss 0.0000
-2020-05-01 20:22:38,294   Epoch 1 takes 1.91 mins
-2020-05-01 20:22:38,294   Train accuracy: 100.00%
-2020-05-01 20:22:38,295       --------------------------------------------
-2020-05-01 20:22:38,295   Epoch 1, time taken 1.91 mins 
-2020-05-01 20:22:38,295       Learning_Rate: 1.500e-03
-2020-05-01 20:22:38,295       train accuracy: 100.00%
-2020-05-01 20:22:38,296       train loss: 0.5186
-2020-05-01 20:23:15,800   On cloud dataset [0, 1, 2, 3, 4, 5, 6, 7, 8],     valid accuracy: 67.91%
-2020-05-01 20:23:19,899   On edge dataset  [9],                             valid accuracy: 4.60%
-2020-05-01 20:24:02,614   On full dataset [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],    valid accuracy: 60.94%
-2020-05-01 20:24:02,616   Epoch 1 train_loss 0.0000
-2020-05-01 20:25:59,106   Epoch 2 takes 1.94 mins
-2020-05-01 20:25:59,112   Train accuracy: 100.00%
-2020-05-01 20:25:59,112       --------------------------------------------
-2020-05-01 20:25:59,112   Epoch 2, time taken 1.94 mins 
-2020-05-01 20:25:59,112       Learning_Rate: 1.500e-03
-2020-05-01 20:25:59,113       train accuracy: 100.00%
-2020-05-01 20:25:59,113       train loss: 0.2151
-2020-05-01 20:26:37,324   On cloud dataset [0, 1, 2, 3, 4, 5, 6, 7, 8],     valid accuracy: 41.60%
-2020-05-01 20:26:41,379   On edge dataset  [9],                             valid accuracy: 83.20%
-2020-05-01 20:27:23,898   On full dataset [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],    valid accuracy: 45.62%
-2020-05-01 20:27:23,900   Epoch 2 train_loss 0.0000
+2020-05-02 15:29:41,074   On cloud dataset [0, 1, 2, 3, 4, 5, 6, 7, 8], valid accuracy: 41.60%
+2020-05-02 15:29:41,074   On edge dataset  [9],                         valid accuracy: 83.20%
+2020-05-02 15:29:41,074   On full dataset [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], valid accuracy: 45.62%
+2020-05-02 15:29:41,169   Testing one single image, idx 2
+2020-05-02 15:29:41,265   Testing one single image, idx 0
+2020-05-02 15:29:41,359   Testing one single image, idx 2
+2020-05-02 15:29:41,360   
+
+-------------Test after loading pre-trained model---------------
+2020-05-02 15:29:41,360   On cloud dataset [0, 1, 2, 3, 4, 5, 6, 7, 8], valid single image: 1.00
+2020-05-02 15:29:41,360   On edge dataset  [9],                         valid single image : 1.00
+2020-05-02 15:29:41,360   On full dataset [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], valid single image : 1.00
