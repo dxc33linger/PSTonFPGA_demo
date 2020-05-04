@@ -1,0 +1,16 @@
+2020-04-07 15:33:41,782    - - - - - importance_sampling.py  - - - - - - - 
+2020-04-07 15:33:41,783   
+
+
+args = Namespace(LR_finish=0.006, LR_start=0.015, batch_size=40, dropout_prob=0.8, filter_mult=1, flip_lr=False, group_size=20, momentum=0.5, num_epochs=50, task_division='5,1', verbose=False)
+2020-04-07 15:33:42,104   cloud list [0, 1, 2, 3, 4]
+
+2020-04-07 15:33:44,349   train_X.shape torch.Size([22500, 3, 32, 32])
+2020-04-07 15:33:44,350   test_X.shape torch.Size([5000, 3, 32, 32]) 
+2020-04-07 15:33:44,350   valid_X.shape torch.Size([2500, 3, 32, 32])
+2020-04-07 15:33:44,350   train_y.shape torch.Size([22500])
+2020-04-07 15:33:44,350   test_y.shape torch.Size([5000]) 
+2020-04-07 15:33:44,350   valid_y.shape torch.Size([2500])
+2020-04-07 15:33:44,355   loading trained weights...
+2020-04-07 15:33:57,229       valid accuracy: 70.32%
+2020-04-07 15:33:57,229       valid loss: 0.1242
