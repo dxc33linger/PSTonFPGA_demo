@@ -1,5 +1,5 @@
 # PSTonFPGA_demo
-This repo include files to perform progressive segmented training on CIFAR-10 dataset. Progressive segmented training significantly reduces the computation cost of the trianing and this is demonstrated on a Intel Stratix-10 MX FPGA.
+This repo include files to perform progressive segmented training on CIFAR-10 dataset. Progressive segmented training significantly reduces the computation cost of the trianing and this is demonstrated on a Intel Stratix-10 MX FPGA. FPGA programming and training results are available in results folder. Demostration of edge training can be found here https://www.dropbox.com/s/byh2du8k72fyk63/FPGA_demo.mp4?dl=0.
 
 ### Enviroments:
 
