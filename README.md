@@ -8,21 +8,24 @@ Python 2.7
 
 CUDA 8.0+
 
-To run CIFAR-10 full dataset fixed point training experiment, perform:
+To run CIFAR-10 full dataset fixed point training experiment, run:
 	
 	python train_CIFAR10_CNN_fixed_point.py -task_division 10,0
 	
 	
-To run CIFAR-10 X+Y (e.g., 9+1) fixed point training,  where X denotes cloud data (the knowledge inheritance), perform:
+To run CIFAR-10 X+Y (e.g., 9+1) fixed point training,  where X denotes cloud data (the knowledge inheritance), run:
 	
 	python train_CIFAR10_CNN_fixed_point.py -task_division 9,1 -ne 45
 
-To load a pre-trained model and do importance sampling, perform:
+To load a pre-trained model and do importance sampling to generate a mask, which will be used on incremental learning later, run:
 
 	python importance_sampling.py -task_division 9,1
 	
-All the generated files are saved in ./result
-
+	
+To perfom the online learning on the rest edge classes with partial weights frozen (for example, 9 classes correspond to 90% weight frozen), run:
+	
+	python incremental_learning.py 
+	
 To check whether the mask is correct, run: 
 
 	python check_mask.py
